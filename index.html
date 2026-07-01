@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>CampusMarket — Buy &amp; Sell on Campus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root{
+          --ink:#0f0f11;--ink2:#2a2a30;--muted:#6b6b7a;--border:#e2e2ea;
+          --surface:#f7f7fb;--white:#fff;
+          --primary:#5b3ff8;--primary-light:#ede9ff;
+          --accent:#ff6b35;--accent-light:#fff0eb;
+          --success:#22c55e;--danger:#ef4444;--warning:#f59e0b;
+          --radius:12px;--radius-sm:8px;
+          --shadow:0 2px 8px rgba(0,0,0,.08);--shadow-md:0 8px 24px rgba(0,0,0,.12);
+          --font:'Space Grotesk',sans-serif;--mono:'Space Mono',monospace;
+        }
+        body{font-family:var(--font);background:var(--surface);color:var(--ink);min-height:100vh}
+        .navbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 1.5rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+        .nav-logo{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--primary);letter-spacing:-.5px;text-decoration:none}
+        .nav-logo span{color:var(--accent)}
+        .nav-center{display:flex;gap:.5rem;align-items:center;flex:1;max-width:480px;margin:0 2rem}
+        .search-box{flex:1;display:flex;align-items:center;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;transition:border-color .2s}
+        .search-box:focus-within{border-color:var(--primary)}
+        .search-box input{flex:1;border:none;background:transparent;padding:.55rem .9rem;font-family:var(--font);font-size:.9rem;color:var(--ink);outline:none}
+        .search-box button{background:var(--primary);border:none;color:#fff;padding:.55rem .9rem;cursor:pointer;font-size:.9rem}
+        .nav-right{display:flex;gap:.6rem;align-items:center}
+        .btn{font-family:var(--font);font-size:.85rem;font-weight:600;padding:.5rem 1rem;border-radius:var(--radius-sm);cursor:pointer;border:none;transition:all .15s}
+        .btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+        .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#4a2fe0}
+        .btn-accent{background:var(--accent);color:#fff}.btn-accent:hover{background:#e05a28}
+        .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#dc2626}
+        .btn-success{background:var(--success);color:#fff}
+        .btn-sm{padding:.35rem .7rem;font-size:.8rem}
+        .btn:disabled{opacity:.5;cursor:not-allowed}
+        .hero-strip{background:linear-gradient(135deg,var(--primary) 0%,#7c5cf5 100%);color:#fff;padding:2.5rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+        .hero-text h1{font-size:1.8rem;font-weight:700;line-height:1.2;margin-bottom:.4rem}
+        .hero-text p{opacity:.85;font-size:.95rem}
+        .hero-meta{display:flex;gap:1.5rem;font-family:var(--mono);font-size:.8rem;opacity:.8;margin-top:.8rem}
+        .hero-meta span b{display:block;font-size:1.4rem;color:#fff;font-family:var(--font);font-weight:700}
+        .hero-badge{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:var(--radius);padding:1rem 1.5rem;text-align:center;min-width:180px}
+        .hero-badge .label{font-size:.75rem;opacity:.8;text-transform:uppercase;letter-spacing:.1em}
+        .hero-badge .value{font-size:2rem;font-weight:700;font-family:var(--mono)}
+        .main-layout{display:flex;min-height:calc(100vh - 180px)}
+        .sidebar{width:260px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);padding:1.2rem}
+        .content-area{flex:1;padding:1.2rem;overflow:hidden}
+        .sidebar-section{margin-bottom:1.5rem}
+        .sidebar-title{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:.7rem;font-family:var(--mono)}
+        .cat-list{display:flex;flex-direction:column;gap:.2rem}
+        .cat-item{display:flex;align-items:center;justify-content:space-between;padding:.5rem .7rem;border-radius:var(--radius-sm);cursor:pointer;font-size:.88rem;transition:all .15s;border:1.5px solid transparent}
+        .cat-item:hover{background:var(--primary-light);color:var(--primary)}
+        .cat-item.active{background:var(--primary-light);color:var(--primary);border-color:var(--primary);font-weight:600}
+        .cat-badge{font-size:.7rem;background:var(--border);color:var(--muted);padding:.1rem .4rem;border-radius:20px;font-family:var(--mono)}
+        .cat-item.active .cat-badge{background:var(--primary);color:#fff}
+        .college-select{width:100%;padding:.5rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);font-size:.88rem;color:var(--ink);background:var(--white);cursor:pointer;outline:none}
+        .college-select:focus{border-color:var(--primary)}
+        .filter-row{display:flex;gap:.4rem;margin-top:.6rem}
+        .filter-row .btn{flex:1;font-size:.78rem;padding:.4rem .5rem}
+        .grid-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+        .grid-title{font-size:1rem;font-weight:600;color:var(--ink2)}
+        .grid-controls{display:flex;gap:.5rem;align-items:center}
+        .sort-select{padding:.4rem .7rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);font-size:.82rem;color:var(--ink);background:var(--white);cursor:pointer;outline:none}
+        .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem}
+        .product-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .2s}
+        .product-card:hover{border-color:var(--primary);box-shadow:var(--shadow-md);transform:translateY(-2px)}
+        .card-img{width:100%;height:160px;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:2rem;overflow:hidden}
+        .card-img img{width:100%;height:100%;object-fit:cover}
+        .card-body{padding:.9rem}
+        .card-category{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);margin-bottom:.3rem;font-family:var(--mono)}
+        .card-title{font-size:.92rem;font-weight:600;color:var(--ink);margin-bottom:.3rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .card-seller{font-size:.78rem;color:var(--muted);margin-bottom:.6rem}
+        .card-footer{display:flex;align-items:center;justify-content:space-between}
+        .card-price{font-size:1.05rem;font-weight:700;color:var(--ink);font-family:var(--mono)}
+        .card-price span{font-size:.7rem;color:var(--muted);font-weight:400;font-family:var(--font)}
+        .status-badge{font-size:.7rem;font-weight:600;padding:.2rem .5rem;border-radius:20px}
+        .status-AVAILABLE{background:#dcfce7;color:#16a34a}
+        .status-OUT_OF_STOCK{background:#fee2e2;color:#dc2626}
+        .card-college{font-size:.72rem;color:var(--muted);margin-top:.4rem;display:flex;align-items:center;gap:.3rem}
+        .card-college::before{content:'📍';font-size:.7rem}
+        .pagination{display:flex;gap:.4rem;justify-content:center;margin-top:1.5rem;padding-bottom:1rem;flex-wrap:wrap}
+        .page-btn{padding:.45rem .8rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--white);font-family:var(--font);font-size:.85rem;cursor:pointer;color:var(--ink);transition:all .15s}
+        .page-btn:hover{border-color:var(--primary);color:var(--primary)}
+        .page-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+        .page-btn:disabled{opacity:.4;cursor:not-allowed}
+        .skeleton{background:linear-gradient(90deg,var(--border) 25%,var(--surface) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--radius-sm)}
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        .skeleton-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+        .sk-img{height:160px;width:100%}
+        .sk-line{height:12px;margin:.5rem .9rem}
+        .sk-line.short{width:60%}.sk-line.shorter{width:40%}
+        .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:1rem}
+        .modal-overlay.open{display:flex}
+        .modal{background:var(--white);border-radius:16px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-md)}
+        .modal-header{padding:1.3rem 1.5rem .8rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+        .modal-title{font-size:1rem;font-weight:700;color:var(--ink)}
+        .modal-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted);padding:.2rem .4rem;border-radius:4px}
+        .modal-close:hover{color:var(--ink);background:var(--surface)}
+        .modal-body{padding:1.2rem 1.5rem}
+        .modal-footer{padding:.8rem 1.5rem 1.3rem;display:flex;gap:.6rem;justify-content:flex-end}
+        .form-group{margin-bottom:1rem}
+        .form-label{display:block;font-size:.8rem;font-weight:600;color:var(--ink2);margin-bottom:.35rem}
+        .form-input{width:100%;padding:.6rem .9rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);font-size:.9rem;color:var(--ink);background:var(--white);outline:none;transition:border-color .2s}
+        .form-input:focus{border-color:var(--primary)}
+        .form-input::placeholder{color:var(--muted)}
+        textarea.form-input{resize:vertical;min-height:80px}
+        .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+        .form-hint{font-size:.75rem;color:var(--muted);margin-top:.25rem}
+        .form-divider{text-align:center;color:var(--muted);font-size:.82rem;margin:.8rem 0;position:relative}
+        .form-divider::before,.form-divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--border)}
+        .form-divider::before{left:0}.form-divider::after{right:0}
+        .toast-container{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:.5rem;z-index:999}
+        .toast{background:var(--ink);color:#fff;padding:.7rem 1.1rem;border-radius:var(--radius-sm);font-size:.85rem;box-shadow:var(--shadow-md);min-width:200px;max-width:320px;display:flex;align-items:center;gap:.6rem;animation:slideIn .3s ease}
+        .toast.success{background:#166534}.toast.error{background:#991b1b}.toast.warning{background:#92400e}
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        .product-detail-modal{max-width:680px}
+        .detail-img{width:100%;height:280px;background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:3rem;overflow:hidden;border-radius:var(--radius) var(--radius) 0 0}
+        .detail-img img{width:100%;height:100%;object-fit:contain;background:var(--white);border-radius:var(--radius) var(--radius) 0 0}
+        .detail-body{padding:1.5rem}
+        .detail-header{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.8rem}
+        .detail-title{font-size:1.2rem;font-weight:700;color:var(--ink);line-height:1.3}
+        .detail-price{font-size:1.4rem;font-weight:700;color:var(--primary);font-family:var(--mono);white-space:nowrap}
+        .detail-meta{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+        .meta-tag{font-size:.75rem;padding:.25rem .6rem;border-radius:20px;font-weight:600}
+        .meta-cat{background:var(--primary-light);color:var(--primary)}
+        .meta-college{background:var(--accent-light);color:var(--accent)}
+        .meta-date{background:var(--surface);color:var(--muted);border:1px solid var(--border)}
+        .detail-desc{font-size:.9rem;color:var(--ink2);line-height:1.6;margin-bottom:1.2rem;white-space:pre-wrap}
+        .detail-seller{display:flex;align-items:center;gap:.7rem;padding:.8rem;background:var(--surface);border-radius:var(--radius-sm);margin-bottom:1.2rem;border:1px solid var(--border)}
+        .seller-avatar{width:36px;height:36px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0}
+        .seller-info .name{font-size:.88rem;font-weight:600;color:var(--ink)}
+        .seller-info .label{font-size:.75rem;color:var(--muted)}
+        .detail-actions{display:flex;gap:.7rem;flex-wrap:wrap}
+        .detail-actions .btn{flex:1;padding:.65rem;min-width:100px}
+        .empty-state{text-align:center;padding:3rem 1rem;color:var(--muted);grid-column:1/-1}
+        .empty-icon{font-size:3rem;margin-bottom:.8rem;opacity:.5}
+        .empty-state h3{font-size:1rem;font-weight:600;color:var(--ink2);margin-bottom:.4rem}
+        .empty-state p{font-size:.85rem}
+        .user-menu-wrap{position:relative}
+        .user-avatar{width:34px;height:34px;border-radius:50%;background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:700;font-size:.85rem;display:flex;align-items:center;justify-content:center}
+        .user-avatar:hover{background:#4a2fe0}
+        .user-dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);min-width:210px;box-shadow:var(--shadow-md);overflow:hidden;z-index:201}
+        .user-dropdown.open{display:block}
+        .dropdown-header{padding:.8rem 1rem;border-bottom:1px solid var(--border);background:var(--surface)}
+        .dropdown-header .name{font-size:.88rem;font-weight:600;color:var(--ink)}
+        .dropdown-header .uid{font-size:.75rem;color:var(--muted);font-family:var(--mono)}
+        .dropdown-item{display:flex;align-items:center;gap:.6rem;padding:.65rem 1rem;font-size:.85rem;color:var(--ink2);cursor:pointer;transition:background .15s;border:none;background:none;width:100%;text-align:left;font-family:var(--font)}
+        .dropdown-item:hover{background:var(--surface);color:var(--primary)}
+        .dropdown-item.danger:hover{background:#fee2e2;color:var(--danger)}
+        .dropdown-sep{height:1px;background:var(--border);margin:.2rem 0}
+        .my-product-item{display:flex;gap:.8rem;align-items:center;padding:.8rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);margin-bottom:.6rem;background:var(--white);transition:border-color .15s}
+        .my-product-item:hover{border-color:var(--primary)}
+        .my-product-img{width:56px;height:56px;border-radius:var(--radius-sm);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--muted);flex-shrink:0;font-size:1.2rem;overflow:hidden}
+        .my-product-img img{width:100%;height:100%;object-fit:cover}
+        .my-product-info{flex:1;min-width:0}
+        .my-product-title{font-size:.88rem;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .my-product-meta{font-size:.75rem;color:var(--muted);margin-top:.2rem;display:flex;align-items:center;gap:.4rem;flex-wrap:wrap}
+        .my-product-actions{display:flex;gap:.4rem;flex-shrink:0}
+        .profile-modal{max-width:540px}
+        .profile-avatar-wrap{display:flex;align-items:center;gap:1rem;padding:.9rem;background:var(--surface);border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:1.2rem}
+        .profile-avatar-circle{width:56px;height:56px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.4rem;font-weight:700;flex-shrink:0}
+        .profile-avatar-img{width:56px;height:56px;border-radius:50%;object-fit:cover;flex-shrink:0;display:none}
+        .profile-avatar-info .name{font-weight:600;font-size:.95rem;color:var(--ink)}
+        .profile-avatar-info .uid{font-size:.75rem;color:var(--muted);font-family:var(--mono);margin-top:.1rem}
+        .profile-avatar-info .college-tag{font-size:.75rem;color:var(--accent);margin-top:.2rem;font-weight:600}
+        .profile-tabs{display:flex;gap:0;margin-bottom:1.1rem;background:var(--surface);border-radius:var(--radius-sm);padding:3px;border:1px solid var(--border)}
+        .profile-tab-btn{flex:1;padding:.45rem .6rem;border:none;background:transparent;color:var(--muted);font-family:var(--font);font-size:.78rem;font-weight:600;border-radius:6px;cursor:pointer;transition:all .15s}
+        .profile-tab-btn.active{background:var(--primary);color:#fff}
+        .profile-tab-panel{display:none}
+        .profile-tab-panel.active{display:block}
+        .session-banner{display:none;background:#fef3c7;border-bottom:1px solid #fbbf24;padding:.5rem 1.5rem;font-size:.82rem;color:#92400e;align-items:center;justify-content:space-between;gap:1rem}
+        .session-banner.show{display:flex}
+        .chat-inbox-modal{max-width:460px}
+        .room-card{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:.8rem .9rem;cursor:pointer;transition:border-color .15s;display:flex;flex-direction:column;gap:.25rem;margin-bottom:.5rem}
+        .room-card:hover{border-color:var(--primary);background:var(--primary-light)}
+        .room-card-meta{font-size:.78rem;color:var(--muted)}
+        .room-card-preview{font-size:.86rem;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .inbox-empty{text-align:center;color:var(--muted);font-size:.85rem;padding:1.5rem 0}
+        .chat-thread-modal{max-width:480px;height:640px;display:flex;flex-direction:column;padding:0;overflow:hidden}
+        .chat-thread-modal .modal-header{flex-shrink:0}
+        .chat-thread-body{flex:1;overflow-y:auto;padding:1rem 1.1rem;display:flex;flex-direction:column;gap:.45rem;background:var(--surface)}
+        .ct-msg-group{display:flex;flex-direction:column;gap:.12rem;max-width:78%}
+        .ct-msg-group.mine{align-self:flex-end;align-items:flex-end}
+        .ct-msg-group.other{align-self:flex-start;align-items:flex-start}
+        .ct-sender{font-size:.68rem;color:var(--muted);padding:0 .4rem;font-family:var(--mono)}
+        .ct-bubble{padding:.55rem .85rem;border-radius:14px;font-size:.87rem;line-height:1.45;word-break:break-word}
+        .ct-msg-group.mine .ct-bubble{background:var(--primary);color:#fff;border-bottom-right-radius:4px}
+        .ct-msg-group.other .ct-bubble{background:var(--white);border:1px solid var(--border);color:var(--ink);border-bottom-left-radius:4px}
+        .ct-time{font-size:.65rem;color:var(--muted);padding:0 .4rem;font-family:var(--mono)}
+        .chat-thread-composer{flex-shrink:0;border-top:1px solid var(--border);padding:.8rem .9rem;display:flex;gap:.6rem;background:var(--white);border-radius:0 0 16px 16px}
+        .chat-thread-composer input{flex:1}
+        .chat-thread-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.4rem;color:var(--muted);font-size:.85rem}
+        .conn-dot-sm{width:7px;height:7px;border-radius:50%;background:var(--success);display:inline-block;margin-right:.35rem}
+        .conn-dot-sm.off{background:var(--danger)}
+        .pw-strength{height:4px;border-radius:2px;margin-top:.4rem;transition:all .3s}
+        .pw-strength.weak{background:var(--danger);width:33%}
+        .pw-strength.medium{background:var(--warning);width:66%}
+        .pw-strength.strong{background:var(--success);width:100%}
+        .pw-strength-label{font-size:.72rem;margin-top:.2rem}
+        .pw-strength-label.weak{color:var(--danger)}
+        .pw-strength-label.medium{color:var(--warning)}
+        .pw-strength-label.strong{color:var(--success)}
+        @media(max-width:768px){
+          .sidebar{display:none}.hero-badge{display:none}
+          .hero-text h1{font-size:1.4rem}.nav-center{display:none}
+          .product-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+          .form-row{grid-template-columns:1fr}
+        }
+    </style>
+</head>
+<body>
+
+<div class="session-banner" id="sessionBanner">
+    <span>⏰ Session expired. Please sign in again.</span>
+    <button class="btn btn-sm btn-primary" onclick="hideBanner();openModal('loginModal')">Sign in</button>
+</div>
+
+<nav class="navbar">
+    <a href="#" class="nav-logo">Campus<span>Market</span></a>
+    <div class="nav-center">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search products, books, gadgets…" oninput="debounceSearch(this.value)"/>
+            <button onclick="triggerSearch()">🔍</button>
+        </div>
+    </div>
+    <div class="nav-right">
+        <a href="admin.html" class="btn btn-ghost btn-sm" style="text-decoration:none">🛠️ Admin</a>
+        <div id="authButtons" style="display:flex;gap:.5rem">
+            <button class="btn btn-ghost btn-sm" onclick="openModal('loginModal')">Sign in</button>
+            <button class="btn btn-primary btn-sm" onclick="openModal('signupModal')">Sign up</button>
+        </div>
+        <div id="userMenu" class="user-menu-wrap" style="display:none">
+            <button class="user-avatar" id="userAvatarBtn" onclick="toggleDropdown()">U</button>
+            <div class="user-dropdown" id="userDropdown">
+                <div class="dropdown-header">
+                    <div class="name" id="dropdownName">User</div>
+                    <div class="uid" id="dropdownId">#0</div>
+                </div>
+                <button class="dropdown-item" onclick="openProfileModal()">👤 My Profile</button>
+                <button class="dropdown-item" onclick="openMyProductsModal()">📦 My Products</button>
+                <button class="dropdown-item" onclick="openAddProductModal()">➕ Sell Something</button>
+                <div class="dropdown-sep"></div>
+                <button class="dropdown-item" onclick="openChatInbox('selling')">🏪 Seller Chats</button>
+                <button class="dropdown-item" onclick="openChatInbox('buying')">🛒 Buyer Chats</button>
+                <div class="dropdown-sep"></div>
+                <button class="dropdown-item danger" onclick="logout()">🚪 Sign out</button>
+                <button class="dropdown-item danger" onclick="deleteAccount()">🗑 Delete Account</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="modal-overlay" id="forgotPasswordModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title" id="fpTitle">Reset your password</span>
+            <button class="modal-close" onclick="closeForgotPasswordModal()">×</button>
+        </div>
+        <div class="modal-body">
+
+            <!-- Step 1: enter mobile -->
+            <div id="fpStepMobile">
+                <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Enter your registered mobile number. We'll send a one-time code to verify it's you.</p>
+                <div class="form-group">
+                    <label class="form-label">Mobile Number</label>
+                    <input class="form-input" id="fpMobile" type="tel" maxlength="10" placeholder="10-digit mobile number" onkeydown="if(event.key==='Enter')doSendOtp()"/>
+                </div>
+                <button class="btn btn-primary" style="width:100%;padding:.7rem" onclick="doSendOtp()" id="fpSendOtpBtn">Send OTP</button>
+            </div>
+
+            <!-- Step 2: verify otp -->
+            <div id="fpStepOtp" style="display:none">
+                <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Enter the 6-digit code sent to <b id="fpMobileDisplay"></b>.</p>
+                <div class="form-group">
+                    <label class="form-label">OTP</label>
+                    <input class="form-input" id="fpOtp" type="text" maxlength="6" placeholder="6-digit code" onkeydown="if(event.key==='Enter')doVerifyOtp()"/>
+                    <div class="form-hint" id="fpDevOtpHint"></div>
+                </div>
+                <button class="btn btn-primary" style="width:100%;padding:.7rem" onclick="doVerifyOtp()" id="fpVerifyBtn">Verify OTP</button>
+                <p style="text-align:center;font-size:.82rem;color:var(--muted);margin-top:.8rem">
+                    Didn't get it? <a href="#" style="color:var(--primary);font-weight:600" onclick="doSendOtp()">Resend OTP</a>
+                </p>
+            </div>
+
+            <!-- Step 3: set new password -->
+            <div id="fpStepReset" style="display:none">
+                <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Choose a new password for your account.</p>
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input class="form-input" id="fpNewPassword" type="password" placeholder="Min 6 characters" autocomplete="new-password" oninput="checkPasswordStrength(this.value)"/>
+                    <div class="pw-strength" id="pwStrengthBar" style="display:none"></div>
+                    <div class="pw-strength-label" id="pwStrengthLabel"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm New Password</label>
+                    <input class="form-input" id="fpConfirmPassword" type="password" placeholder="Repeat new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doResetPassword()"/>
+                </div>
+                <button class="btn btn-primary" style="width:100%;padding:.7rem" onclick="doResetPassword()" id="fpResetBtn">Reset Password</button>
+            </div>
+
+            <!-- Step 4: success -->
+            <div id="fpStepDone" style="display:none;text-align:center;padding:1rem 0">
+                <div style="font-size:2.5rem;margin-bottom:.6rem">✅</div>
+                <h3 style="font-size:1rem;margin-bottom:.4rem">Password reset successfully</h3>
+                <p style="font-size:.85rem;color:var(--muted);margin-bottom:1.2rem">You can now sign in with your new password.</p>
+                <button class="btn btn-primary" style="width:100%;padding:.7rem" onclick="switchModals('forgotPasswordModal','loginModal')">Back to Sign in</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="hero-strip">
+    <div class="hero-text">
+        <h1>Your campus,<br/>your marketplace.</h1>
+        <p>Buy and sell textbooks, gadgets, and more — right within your college.</p>
+        <div class="hero-meta">
+            <span><b id="heroProductCount">—</b>listings</span>
+            <span><b id="heroCatCount">—</b>categories</span>
+        </div>
+    </div>
+    <div class="hero-badge">
+        <div class="label">Students active</div>
+        <div class="value">🎓</div>
+        <div style="font-size:.8rem;opacity:.8;margin-top:.3rem">Buying &amp; selling now</div>
+    </div>
+</div>
+
+<div class="main-layout">
+    <aside class="sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-title">Categories</div>
+            <div class="cat-list" id="categoryList">
+                <div class="cat-item active" data-id="" onclick="selectCategory(this,'','All Products')">All Products <span class="cat-badge">—</span></div>
+            </div>
+        </div>
+        <div class="sidebar-section">
+            <div class="sidebar-title">Filter by College</div>
+            <select class="college-select" id="collegeSelect" onchange="applyCollegeFilter()">
+                <option value="">All colleges</option>
+            </select>
+            <div class="filter-row">
+                <button class="btn btn-ghost" onclick="clearFilters()">Clear</button>
+                <button class="btn btn-primary" onclick="loadProducts()">Apply</button>
+            </div>
+        </div>
+    </aside>
+    <main class="content-area">
+        <div class="grid-header">
+            <div class="grid-title" id="gridTitle">All Products</div>
+            <div class="grid-controls">
+                <select class="sort-select" id="sortSelect" onchange="loadProducts()">
+                    <option value="uploadDate|desc">Newest first</option>
+                    <option value="uploadDate|asc">Oldest first</option>
+                    <option value="amount|asc">Price: low → high</option>
+                    <option value="amount|desc">Price: high → low</option>
+                </select>
+                <button class="btn btn-accent btn-sm" onclick="openAddProductModal()">+ Sell</button>
+            </div>
+        </div>
+        <div class="product-grid" id="productGrid"></div>
+        <div class="pagination" id="pagination"></div>
+    </main>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="modal-overlay" id="loginModal">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Sign in to CampusMarket</span><button class="modal-close" onclick="closeModal('loginModal')">×</button></div>
+        <div class="modal-body">
+            <div class="form-group"><label class="form-label">Username</label><input class="form-input" id="loginUsername" type="text" placeholder="Your username" autocomplete="username"/></div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input class="form-input" id="loginPassword" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password"/>
+                <div style="text-align:right;margin-top:.35rem">
+                    <a href="#" style="color:var(--primary);font-size:.8rem;font-weight:600" onclick="switchModals('loginModal','forgotPasswordModal')">Forgot password?</a>
+                </div>
+            </div>
+            <button class="btn btn-primary" style="width:100%;padding:.7rem" onclick="doLogin()" id="loginBtn">Sign in</button>
+            <div class="form-divider" style="margin-top:1rem">or</div>
+            <p style="text-align:center;font-size:.85rem;color:var(--muted)">No account? <a href="#" style="color:var(--primary);font-weight:600" onclick="switchModals('loginModal','signupModal')">Sign up free</a></p>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="signupModal">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Create your account</span><button class="modal-close" onclick="closeModal('signupModal')">×</button></div>
+        <div class="modal-body">
+            <div class="form-group"><label class="form-label">Username</label><input class="form-input" id="signupUsername" type="text" placeholder="Choose a username" autocomplete="username"/></div>
+            <div class="form-group"><label class="form-label">College</label><input class="form-input" id="signupCollege" type="text" placeholder="e.g. IIT Delhi"/><div class="form-hint">Your college name helps buyers and sellers connect nearby.</div></div>
+            <div class="form-group">
+                <label class="form-label">Mobile Number</label>
+                <input class="form-input" id="signupMobile" type="tel" maxlength="10" placeholder="10-digit mobile number"/>
+                <div class="form-hint">Used to verify your account and reset your password if needed.</div>
+            </div>
+            <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="signupPassword" type="password" placeholder="Min 6 characters" onkeydown="if(event.key==='Enter')doSignup()" autocomplete="new-password"/></div>
+            <button class="btn btn-primary" style="width:100%;padding:.7rem" onclick="doSignup()" id="signupBtn">Create account</button>
+            <p style="text-align:center;font-size:.85rem;color:var(--muted);margin-top:.8rem">Have an account? <a href="#" style="color:var(--primary);font-weight:600" onclick="switchModals('signupModal','loginModal')">Sign in</a></p>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="productModal">
+    <div class="modal product-detail-modal"><div id="productModalContent"></div></div>
+</div>
+
+<div class="modal-overlay" id="addProductModal">
+    <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+            <span class="modal-title">List a product</span>
+            <button class="modal-close" onclick="closeModal('addProductModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">Title *</label>
+                <input class="form-input" id="apTitle" placeholder="e.g. Physics textbook — Halliday 10th ed."/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Description *</label>
+                <textarea class="form-input" id="apDesc" placeholder="Describe the condition, edition, extras…"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Price (₹) *</label>
+                    <input class="form-input" id="apPrice" type="number" min="0" placeholder="e.g. 350"/>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <select class="form-input" id="apCategory">
+                        <option value="">Choose category…</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Product Image</label>
+                <div id="apImgDropzone" onclick="document.getElementById('apImgFile').click()"
+                     style="border:2px dashed var(--border);border-radius:var(--radius-sm);
+                padding:1.2rem;text-align:center;cursor:pointer;
+                transition:border-color .2s;background:var(--surface)">
+                    <img id="apImgPreview" src="" alt="Preview"
+                         style="max-height:220px;max-width:100%;width:auto;height:auto;border-radius:var(--radius-sm);object-fit:contain;display:block;margin:0 auto"/>
+                    </div>
+                    <div id="apImgPlaceholder">
+                        <div style="font-size:1.5rem;margin-bottom:.3rem">🖼️</div>
+                        <div style="font-size:.82rem;color:var(--muted)">Click to choose an image</div>
+                        <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">JPG, PNG, WEBP — max 2MB</div>
+                    </div>
+                </div>
+                <input type="file" id="apImgFile" accept="image/jpeg,image/png,image/webp"
+                       style="display:none" onchange="handleProductImageUpload(this)"/>
+                <input type="hidden" id="apImg"/>
+                <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem">
+                    <div style="flex:1;height:1px;background:var(--border)"></div>
+                    <span style="font-size:.75rem;color:var(--muted)">or</span>
+                    <div style="flex:1;height:1px;background:var(--border)"></div>
+                </div>
+                <input class="form-input" id="apImgUrl" placeholder="Paste image URL instead…"
+                       style="margin-top:.5rem;font-size:.85rem"
+                       oninput="handleProductImageUrl(this.value)"/>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('addProductModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="doAddProduct()" id="addProductBtn">List product</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="editProductModal">
+    <div class="modal" style="max-width:520px">
+        <div class="modal-header"><span class="modal-title">Edit listing</span><button class="modal-close" onclick="closeModal('editProductModal')">×</button></div>
+        <div class="modal-body">
+            <input type="hidden" id="epId"/>
+            <div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="epTitle"/></div>
+            <div class="form-group"><label class="form-label">Description *</label><textarea class="form-input" id="epDesc"></textarea></div>
+            <div class="form-row">
+                <div class="form-group"><label class="form-label">Price (₹) *</label><input class="form-input" id="epPrice" type="number" min="0"/></div>
+                <div class="form-group"><label class="form-label">Status</label><select class="form-input" id="epStatus"><option value="AVAILABLE">Available</option><option value="OUT_OF_STOCK">Mark as Sold</option></select></div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Product Image</label>
+                <div id="epImgDropzone" onclick="document.getElementById('epImgFile').click()"
+                     style="border:2px dashed var(--border);border-radius:var(--radius-sm);
+                padding:1.2rem;text-align:center;cursor:pointer;
+                transition:border-color .2s;background:var(--surface)">
+                    <div id="epImgPreviewWrap" style="display:none;margin-bottom:.6rem">
+                        <img id="epImgPreview" src="" alt="Preview"
+                             style="max-height:220px;max-width:100%;width:auto;height:auto;border-radius:var(--radius-sm);object-fit:contain;display:block;margin:0 auto"/>
+                    </div>
+                    <div id="epImgPlaceholder">
+                        <div style="font-size:1.5rem;margin-bottom:.3rem">🖼️</div>
+                        <div style="font-size:.82rem;color:var(--muted)">Click to choose an image</div>
+                        <div style="font-size:.75rem;color:var(--muted);margin-top:.2rem">JPG, PNG, WEBP — max 2MB</div>
+                    </div>
+                </div>
+                <input type="file" id="epImgFile" accept="image/jpeg,image/png,image/webp"
+                       style="display:none" onchange="handleEditProductImageUpload(this)"/>
+                <input type="hidden" id="epImg"/>
+                <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem">
+                    <div style="flex:1;height:1px;background:var(--border)"></div>
+                    <span style="font-size:.75rem;color:var(--muted)">or</span>
+                    <div style="flex:1;height:1px;background:var(--border)"></div>
+                </div>
+                <input class="form-input" id="epImgUrl" placeholder="Paste image URL instead…"
+                       style="margin-top:.5rem;font-size:.85rem"
+                       oninput="handleEditProductImageUrl(this.value)"/>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('editProductModal')">Cancel</button>
+            <button class="btn btn-primary" onclick="doEditProduct()" id="editProductBtn">Save changes</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="myProductsModal">
+    <div class="modal" style="max-width:560px">
+        <div class="modal-header"><span class="modal-title">My Products</span><button class="modal-close" onclick="closeModal('myProductsModal')">×</button></div>
+        <div class="modal-body">
+            <div class="profile-tabs">
+                <button class="profile-tab-btn active" id="mpTabBtnSell" onclick="switchMyProductsTab('sell')">Selling</button>
+                <button class="profile-tab-btn" id="mpTabBtnBuy" onclick="switchMyProductsTab('buy')">Purchased</button>
+            </div>
+            <div class="profile-tab-panel active" id="mpTabSell"><div id="myProductsBody"><div class="empty-state"><div class="empty-icon">📦</div><p>Loading…</p></div></div></div>
+            <div class="profile-tab-panel" id="mpTabBuy"><div id="myPurchasesBody"><div class="empty-state"><div class="empty-icon">🛍️</div><p>Loading…</p></div></div></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="profileModal">
+    <div class="modal profile-modal">
+        <div class="modal-header"><span class="modal-title">My Profile</span><button class="modal-close" onclick="closeModal('profileModal')">×</button></div>
+        <div class="modal-body">
+
+            <div class="profile-avatar-wrap">
+                <div class="profile-avatar-circle" id="profileAvatarCircle">U</div>
+                <img class="profile-avatar-img" id="profileImgPreview" src="" alt="Profile" onerror="resetAvatarPreview()"/>
+                <div class="profile-avatar-info">
+                    <div class="name" id="profileDisplayName">—</div>
+                    <div class="uid" id="profileDisplayId">ID #—</div>
+                    <div class="college-tag" id="profileDisplayCollege"></div>
+                </div>
+            </div>
+
+            <div class="profile-tabs">
+                <button class="profile-tab-btn active" id="ptabBtnEdit" onclick="switchProfileTab('edit')">Edit Profile</button>
+                <button class="profile-tab-btn" id="ptabBtnPwd" onclick="switchProfileTab('pwd')">Change Password</button>
+                <button class="profile-tab-btn" id="ptabBtnSell" onclick="switchProfileTab('sell')">Listings</button>
+                <button class="profile-tab-btn" id="ptabBtnBuy" onclick="switchProfileTab('buy')">Purchases</button>
+            </div>
+
+            <div class="profile-tab-panel active" id="ptabEdit">
+                <div class="form-group"><label class="form-label">Username</label><input class="form-input" id="profileUsername" placeholder="Your username"/></div>
+                <div class="form-group">
+                    <label class="form-label">College</label>
+                    <input class="form-input" id="profileCollege" placeholder="e.g. IIT Delhi"/>
+                    <div class="form-hint">Updating your college affects future product listings.</div>
+                </div>
+                <button class="btn btn-primary" style="width:100%" onclick="doUpdateProfile()" id="profileSaveBtn">Save changes</button>
+            </div>
+
+            <div class="profile-tab-panel" id="ptabPwd">
+                <div class="form-group"><label class="form-label">Current Password</label><input class="form-input" id="pwdCurrent" type="password" placeholder="Your current password" autocomplete="current-password"/></div>
+                <div class="form-group">
+                    <label class="form-label">New Password</label>
+                    <input class="form-input" id="pwdNew" type="password" placeholder="Min 6 characters" autocomplete="new-password" oninput="checkPasswordStrength(this.value)"/>
+                    <div class="pw-strength" id="pwStrengthBar" style="display:none"></div>
+                    <div class="pw-strength-label" id="pwStrengthLabel"></div>
+                </div>
+                <div class="form-group"><label class="form-label">Confirm New Password</label><input class="form-input" id="pwdConfirm" type="password" placeholder="Repeat new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doChangePassword()"/></div>
+                <button class="btn btn-primary" style="width:100%" onclick="doChangePassword()" id="pwdSaveBtn">Change Password</button>
+            </div>
+
+            <div class="profile-tab-panel" id="ptabSell">
+                <div id="profileSellList"><div class="empty-state" style="padding:1.5rem"><div class="empty-icon">📦</div><p>Loading…</p></div></div>
+            </div>
+
+            <div class="profile-tab-panel" id="ptabBuy">
+                <div id="profileBuyList"><div class="empty-state" style="padding:1.5rem"><div class="empty-icon">🛍️</div><p>Loading…</p></div></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="reportModal">
+    <div class="modal">
+        <div class="modal-header"><span class="modal-title">Report this listing</span><button class="modal-close" onclick="closeModal('reportModal')">×</button></div>
+        <div class="modal-body">
+            <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Tell us why this listing violates our community guidelines.</p>
+            <div class="form-group"><label class="form-label">Reason *</label><textarea class="form-input" id="reportReason" placeholder="Describe the issue…" style="min-height:100px"></textarea></div>
+            <input type="hidden" id="reportProductId"/>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeModal('reportModal')">Cancel</button>
+            <button class="btn btn-danger" onclick="doReport()" id="reportBtn">Submit report</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="chatInboxModal">
+    <div class="modal chat-inbox-modal">
+        <div class="modal-header"><span class="modal-title" id="chatInboxTitle">Chats</span><button class="modal-close" onclick="closeModal('chatInboxModal')">×</button></div>
+        <div class="modal-body" id="chatInboxBody"><div class="inbox-empty">Loading…</div></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="chatThreadModal">
+    <div class="modal chat-thread-modal">
+        <div class="modal-header">
+            <div><span class="conn-dot-sm off" id="ctConnDot"></span><span class="modal-title" id="chatThreadTitle">Room</span></div>
+            <button class="modal-close" onclick="closeChatThread()">×</button>
+        </div>
+        <div id="ctSellerActions" style="display:none;padding:.6rem 1.1rem;border-bottom:1px solid var(--border);background:var(--accent-light)">
+            <button class="btn btn-accent btn-sm" style="width:100%" onclick="ctMarkAsSold()" id="ctMarkSoldBtn">✅ Mark as Sold to this buyer</button>
+        </div>
+        <div class="chat-thread-body" id="chatThreadBody">
+            <div class="chat-thread-empty"><div style="font-size:2rem">💬</div><div>No messages yet — say hello!</div></div>
+        </div>
+        <div class="chat-thread-composer">
+            <input class="form-input" id="ctMsgInput" placeholder="Type a message…" autocomplete="off" onkeydown="if(event.key==='Enter')ctSendMsg()"/>
+            <button class="btn btn-primary" onclick="ctSendMsg()" style="flex:0">➤</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API='https://campus-market-u1lq.onrender.com';
+    let token=localStorage.getItem('cm_token')||null;
+    let refreshTok=localStorage.getItem('cm_refresh')||null;
+    let currentUser=JSON.parse(localStorage.getItem('cm_user')||'null');
+    let currentPage=0,totalPages=1;
+    let selectedCategoryId='',selectedCategoryName='All Products',selectedCollege='',searchQuery='',searchTimer=null;
+
+    window.onload=async()=>{
+      restoreSession();showSkeletons();
+      await loadCategories();await loadColleges();await loadProducts();await loadHeroStats();
+    };
+
+    function authHeaders(){const h={'Content-Type':'application/json'};if(token)h['Authorization']='Bearer '+token;return h;}
+
+    async function tryRefresh(){
+      if(!refreshTok)return false;
+      try{
+        const r=await fetch(`${API}/auth/refresh`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refreshToken:refreshTok})});
+        if(!r.ok)return false;
+        const d=await r.json();token=d.accessToken;localStorage.setItem('cm_token',token);return true;
+      }catch{return false;}
+    }
+
+    async function apiFetch(url,options={}){
+      options.headers=options.headers||authHeaders();
+      let r=await fetch(url,options);
+      if(r.status===401&&refreshTok){
+        const ok=await tryRefresh();
+        if(ok){options.headers=authHeaders();r=await fetch(url,options);}
+        else showSessionBanner();
+      }
+      return r;
+    }
+
+    function showSessionBanner(){document.getElementById('sessionBanner').classList.add('show')}
+    function hideBanner(){document.getElementById('sessionBanner').classList.remove('show')}
+
+    function restoreSession(){if(currentUser)showUserMenu(currentUser)}
+
+    function showUserMenu(user){
+      document.getElementById('authButtons').style.display='none';
+      document.getElementById('userMenu').style.display='block';
+      document.getElementById('dropdownName').textContent=user.username||'User';
+      document.getElementById('dropdownId').textContent='ID #'+user.id;
+      document.getElementById('userAvatarBtn').textContent=(user.username||'U')[0].toUpperCase();
+    }
+
+    function logout(){
+      token=null;refreshTok=null;currentUser=null;
+      localStorage.removeItem('cm_token');localStorage.removeItem('cm_refresh');localStorage.removeItem('cm_user');
+      document.getElementById('authButtons').style.display='flex';
+      document.getElementById('userMenu').style.display='none';
+      hideBanner();closeDropdown();disconnectChatThread();toast('Signed out','success');
+    }
+
+    function openModal(id){document.getElementById(id).classList.add('open')}
+    function closeModal(id){document.getElementById(id).classList.remove('open')}
+    function switchModals(a,b){closeModal(a);setTimeout(()=>openModal(b),150)}
+
+    document.querySelectorAll('.modal-overlay').forEach(el=>{
+      el.addEventListener('click',e=>{if(e.target===el){el.classList.remove('open');if(el.id==='chatThreadModal')disconnectChatThread();}});
+    });
+
+    function toggleDropdown(){document.getElementById('userDropdown').classList.toggle('open')}
+    function closeDropdown(){document.getElementById('userDropdown').classList.remove('open')}
+    document.addEventListener('click',e=>{if(!e.target.closest('.user-menu-wrap'))closeDropdown();});
+
+    function toast(msg,type='info'){
+      const el=document.createElement('div');el.className=`toast ${type}`;
+      el.innerHTML=`<span>${type==='success'?'✓':type==='error'?'✕':'ℹ'}</span> ${escHtml(msg)}`;
+      document.getElementById('toastContainer').appendChild(el);setTimeout(()=>el.remove(),3500);
+    }
+
+    async function loadHeroStats(){
+      try{const r=await fetch(`${API}/products?page=0&size=1`);if(r.ok){const d=await r.json();document.getElementById('heroProductCount').textContent=d.totalElements??'—'}}catch{}
+      try{const r=await fetch(`${API}/categorys/allCategory`);if(r.ok){const d=await r.json();document.getElementById('heroCatCount').textContent=d.length??'—'}}catch{}
+    }
+
+    async function loadCategories(){
+      try{
+        const r=await fetch(`${API}/categorys/allCategory`);if(!r.ok)return;
+        const cats=await r.json();
+        const list=document.getElementById('categoryList');
+        list.innerHTML=`<div class="cat-item active" data-id="" onclick="selectCategory(this,'','All Products')">All Products <span class="cat-badge">${cats.length} cats</span></div>`;
+        cats.forEach(c=>{
+          const div=document.createElement('div');div.className='cat-item';div.dataset.id=c.id;
+          div.onclick=()=>selectCategory(div,c.id,c.name);
+          div.innerHTML=`${escHtml(c.name)} <span class="cat-badge">#${c.id}</span>`;
+          list.appendChild(div);
+        });
+        const sel=document.getElementById('apCategory');
+        sel.innerHTML='<option value="">Choose category…</option>';
+        cats.forEach(c=>{sel.innerHTML+=`<option value="${c.id}">${escHtml(c.name)}</option>`});
+      }catch{}
+    }
+
+    function selectCategory(el,id,name){
+      document.querySelectorAll('.cat-item').forEach(i=>i.classList.remove('active'));
+      el.classList.add('active');selectedCategoryId=id;selectedCategoryName=name;currentPage=0;
+      loadColleges(id);loadProducts();
+    }
+
+    async function loadColleges(catId=''){
+      try{
+        const url=catId?`${API}/products/colleges/by-category?categoryId=${catId}`:`${API}/products/colleges`;
+        const r=await fetch(url);if(!r.ok)return;
+        const colleges=await r.json();
+        const sel=document.getElementById('collegeSelect');const prev=sel.value;
+        sel.innerHTML='<option value="">All colleges</option>';
+        colleges.forEach(c=>{sel.innerHTML+=`<option value="${escHtml(c)}">${escHtml(c)}</option>`});
+        if(colleges.includes(prev))sel.value=prev;
+      }catch{}
+    }
+
+    function applyCollegeFilter(){selectedCollege=document.getElementById('collegeSelect').value;currentPage=0;loadProducts()}
+    function clearFilters(){
+      selectedCategoryId='';selectedCategoryName='All Products';selectedCollege='';searchQuery='';
+      document.getElementById('collegeSelect').value='';document.getElementById('searchInput').value='';
+      document.querySelectorAll('.cat-item').forEach((i,idx)=>i.classList.toggle('active',idx===0));
+      currentPage=0;loadProducts();
+    }
+
+    async function loadProducts(){
+      const sortVal=document.getElementById('sortSelect').value.split('|');
+      const sortBy=sortVal[0],direction=sortVal[1];
+      showSkeletons();
+      document.getElementById('gridTitle').textContent=selectedCategoryName+(selectedCollege?` · ${selectedCollege}`:'');
+      try{
+        if(searchQuery){
+          const r=await fetch(`${API}/products/getProductTitle?title=${encodeURIComponent(searchQuery)}`,{headers:authHeaders()});
+          if(!r.ok)throw new Error();
+          const data=await r.json();
+          renderProductList(Array.isArray(data)?data.filter(p=>(p.status||'AVAILABLE')==='AVAILABLE'):[]);
+          document.getElementById('pagination').innerHTML='';return;
+        }
+        const url=`${API}/products/filter?page=${currentPage}&size=20&sortBy=${sortBy}&direction=${direction}&status=AVAILABLE`
+          +(selectedCategoryId?`&categoryId=${selectedCategoryId}`:'')
+          +(selectedCollege?`&college=${encodeURIComponent(selectedCollege)}`:'');
+        const r=await fetch(url);if(!r.ok)throw new Error();
+        renderProductPage(await r.json());
+      }catch{
+        document.getElementById('productGrid').innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><h3>Couldn\'t load products</h3><p>Make sure the backend is running on port 8083.</p></div>';
+      }
+    }
+
+    function showSkeletons(){
+      document.getElementById('productGrid').innerHTML=Array(8).fill(0).map(()=>
+        `<div class="skeleton-card"><div class="skeleton sk-img"></div>
+         <div class="skeleton sk-line" style="margin:.8rem .9rem .3rem"></div>
+         <div class="skeleton sk-line short" style="margin:0 .9rem .3rem"></div>
+         <div class="skeleton sk-line shorter" style="margin:0 .9rem .9rem"></div></div>`).join('');
+    }
+    function renderProductPage(data){totalPages=data.totalPages||1;renderProductList(data.content||[]);renderPagination(data.number||0,totalPages)}
+    function renderProductList(products){
+      const g=document.getElementById('productGrid');
+      if(!products.length){g.innerHTML=`<div class="empty-state"><div class="empty-icon">🔍</div><h3>No products found</h3><p>Try adjusting your filters or search.</p></div>`;return}
+      g.innerHTML=products.map(p=>productCard(p)).join('');
+    }
+    function productCard(p){
+      const hasImg=p.imgUrl&&(p.imgUrl.startsWith('http')||p.imgUrl.startsWith('data:image'));
+      const imgHtml=hasImg?`<img src="${escHtml(p.imgUrl)}" alt="${escHtml(p.title)}" loading="lazy" onerror="this.parentElement.innerHTML='📦'">`:' 📦';
+      const data=encodeURIComponent(JSON.stringify(p));
+      return `<div class="product-card" onclick="openProduct('${data}')">
+        <div class="card-img">${imgHtml}</div>
+        <div class="card-body">
+          <div class="card-category">${escHtml(p.categoryName||'Uncategorized')}</div>
+          <div class="card-title">${escHtml(p.title)}</div>
+          <div class="card-seller">by ${escHtml(p.sellerName||'Unknown')}</div>
+          <div class="card-footer">
+            <div class="card-price">₹${escHtml(p.amount)} <span>INR</span></div>
+            <span class="status-badge status-${p.status||'AVAILABLE'}">${p.status==='OUT_OF_STOCK'?'Sold':'Available'}</span>
+          </div>
+          ${p.college?`<div class="card-college">${escHtml(p.college)}</div>`:''}
+        </div>
+      </div>`;
+    }
+
+    function renderPagination(page,total){
+      const el=document.getElementById('pagination');if(total<=1){el.innerHTML='';return}
+      const start=Math.max(0,page-2),end=Math.min(total-1,page+2);
+      let html=`<button class="page-btn" ${page===0?'disabled':''} onclick="goPage(${page-1})">‹ Prev</button>`;
+      for(let i=start;i<=end;i++)html+=`<button class="page-btn ${i===page?'active':''}" onclick="goPage(${i})">${i+1}</button>`;
+      html+=`<button class="page-btn" ${page===total-1?'disabled':''} onclick="goPage(${page+1})">Next ›</button>`;
+      el.innerHTML=html;
+    }
+    function goPage(p){currentPage=p;loadProducts();window.scrollTo(0,0)}
+    function debounceSearch(val){clearTimeout(searchTimer);searchTimer=setTimeout(()=>{searchQuery=val.trim();currentPage=0;loadProducts()},400)}
+    function triggerSearch(){searchQuery=document.getElementById('searchInput').value.trim();currentPage=0;loadProducts()}
+
+    function openProduct(encoded){
+      const p=JSON.parse(decodeURIComponent(encoded));
+      const hasImg=p.imgUrl&&(p.imgUrl.startsWith('http')||p.imgUrl.startsWith('data:image'));
+      const imgHtml=hasImg?`<img src="${escHtml(p.imgUrl)}" alt="${escHtml(p.title)}">`:`<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:4rem">📦</div>`;
+      const dateStr=p.uploadDate?new Date(p.uploadDate).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'';
+      const isOwner=currentUser&&currentUser.id===p.sellerId;
+      const loggedIn=!!currentUser;
+      const encodedP=encodeURIComponent(JSON.stringify(p));
+      document.getElementById('productModalContent').innerHTML=`
+        <div class="detail-img">${imgHtml}</div>
+        <div style="display:flex;justify-content:flex-end;padding:.6rem 1.2rem 0">
+          <button class="modal-close" onclick="closeModal('productModal')" style="font-size:1.4rem">×</button>
+        </div>
+        <div class="detail-body">
+          <div class="detail-header">
+            <div class="detail-title">${escHtml(p.title)}</div>
+            <div class="detail-price">₹${escHtml(p.amount)}</div>
+          </div>
+          <div class="detail-meta">
+            <span class="meta-tag meta-cat">${escHtml(p.categoryName||'—')}</span>
+            ${p.college?`<span class="meta-tag meta-college">📍 ${escHtml(p.college)}</span>`:''}
+            ${dateStr?`<span class="meta-tag meta-date">Listed ${dateStr}</span>`:''}
+            <span class="status-badge status-${p.status||'AVAILABLE'}">${p.status==='OUT_OF_STOCK'?'Sold':'Available'}</span>
+          </div>
+          <div class="detail-desc">${escHtml(p.description||'No description provided.')}</div>
+          <div class="detail-seller">
+            <div class="seller-avatar">${(p.sellerName||'?')[0].toUpperCase()}</div>
+            <div class="seller-info">
+              <div class="name">${escHtml(p.sellerName||'Unknown')}</div>
+              <div class="label">Seller · ID #${p.sellerId||'?'}</div>
+            </div>
+          </div>
+          <div class="detail-actions">
+            ${loggedIn&&!isOwner&&p.status==='AVAILABLE'?`<button class="btn btn-primary" onclick="startBuyerChat(${p.sellerId},${p.id})">💬 Message Seller</button>`:''}
+            ${isOwner?`<button class="btn btn-ghost" onclick="closeModal('productModal');openEditProduct('${encodedP}')">✏️ Edit</button>`:''}
+            ${isOwner?`<button class="btn btn-danger" onclick="deleteProduct(${p.id})">🗑 Delete</button>`:''}
+            ${loggedIn&&!isOwner?`<button class="btn btn-ghost" onclick="openReportModal(${p.id})">⚑ Report</button>`:''}
+          </div>
+        </div>`;
+      openModal('productModal');
+    }
+
+    async function doLogin(){
+      const username=document.getElementById('loginUsername').value.trim();
+      const password=document.getElementById('loginPassword').value;
+      if(!username||!password){toast('Fill in all fields','warning');return}
+      const btn=document.getElementById('loginBtn');btn.disabled=true;btn.textContent='Signing in…';
+      try{
+        const r=await fetch(`${API}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,password})});
+        const d=await r.json();
+        if(!r.ok){toast(d.message||'Invalid credentials','error');return}
+        token=d.jwt;refreshTok=d.refreshToken;
+        currentUser={id:d.id,username:d.username};
+        localStorage.setItem('cm_token',token);localStorage.setItem('cm_refresh',refreshTok);localStorage.setItem('cm_user',JSON.stringify(currentUser));
+        showUserMenu(currentUser);hideBanner();closeModal('loginModal');
+        document.getElementById('loginPassword').value='';
+        toast(`Welcome back, ${d.username}! 👋`,'success');
+      }catch{toast('Cannot reach server','error')}
+      finally{btn.disabled=false;btn.textContent='Sign in'}
+    }
+
+    async function doSignup(){
+  const username=document.getElementById('signupUsername').value.trim();
+  const college=document.getElementById('signupCollege').value.trim();
+  const mobile=document.getElementById('signupMobile').value.trim();
+  const password=document.getElementById('signupPassword').value;
+  if(!username||!college||!mobile||!password){toast('Fill in all fields','warning');return}
+  if(!/^[6-9]\d{9}$/.test(mobile)){toast('Enter a valid 10-digit mobile number','warning');return}
+  const btn=document.getElementById('signupBtn');btn.disabled=true;btn.textContent='Creating account…';
+  try{
+    const r=await fetch(`${API}/auth/signup`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,college,mobile,password})});
+    const d=await r.json();
+    if(!r.ok){toast(d.message||'Signup failed','error');return}
+    toast('Account created! Please sign in.','success');
+    switchModals('signupModal','loginModal');
+    document.getElementById('loginUsername').value=username;
+    document.getElementById('signupPassword').value='';
+    document.getElementById('signupMobile').value='';
+  }catch{toast('Cannot reach server','error')}
+  finally{btn.disabled=false;btn.textContent='Create account'}
+}
+
+    function openAddProductModal(){
+      if(!currentUser){toast('Sign in to sell','warning');openModal('loginModal');return}
+      closeDropdown();openModal('addProductModal');
+      resetAddProductImagePicker();
+    }
+
+    /* ── PRODUCT IMAGE HANDLERS (file -> base64 dataURL, or pasted URL) ──
+       Product.imgUrl is @Column(columnDefinition="TEXT") server-side, so a
+       base64 data: URL fits safely without any backend/upload-endpoint work. */
+    const AP_IMG_MAX_BYTES = 2 * 1024 * 1024; // 2MB, matches the dropzone hint text
+
+    function handleProductImageUpload(inputEl){
+      const file = inputEl.files && inputEl.files[0];
+      if(!file) return;
+
+      if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
+        toast('Please choose a JPG, PNG, or WEBP image', 'warning');
+        inputEl.value='';
+        return;
+      }
+      if(file.size > AP_IMG_MAX_BYTES){
+        toast('Image is too large — max 2MB', 'warning');
+        inputEl.value='';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result; // e.g. "data:image/png;base64,...."
+        document.getElementById('apImg').value = dataUrl;
+        document.getElementById('apImgUrl').value = ''; // clear the other input so they don't conflict
+        showApImgPreview(dataUrl);
+      };
+      reader.onerror = () => {
+        toast('Could not read that image file', 'error');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleProductImageUrl(url){
+      url = (url || '').trim();
+      if(!url){
+        // user cleared the URL field -- only reset if a file wasn't chosen instead
+        if(!document.getElementById('apImgFile').files.length){
+          document.getElementById('apImg').value = '';
+          hideApImgPreview();
+        }
+        return;
+      }
+      document.getElementById('apImg').value = url;
+      document.getElementById('apImgFile').value = ''; // clear the file picker so they don't conflict
+      showApImgPreview(url);
+    }
+
+    function showApImgPreview(src){
+      document.getElementById('apImgPreview').src = src;
+      document.getElementById('apImgPreviewWrap').style.display = 'block';
+      document.getElementById('apImgPlaceholder').style.display = 'none';
+    }
+    function hideApImgPreview(){
+      document.getElementById('apImgPreviewWrap').style.display = 'none';
+      document.getElementById('apImgPlaceholder').style.display = 'block';
+      document.getElementById('apImgPreview').src = '';
+    }
+    function resetAddProductImagePicker(){
+      document.getElementById('apImg').value='';
+      document.getElementById('apImgUrl').value='';
+      document.getElementById('apImgFile').value='';
+      hideApImgPreview();
+    }
+
+   async function doAddProduct() {
+    const title = document.getElementById('apTitle').value.trim();
+    const description = document.getElementById('apDesc').value.trim();
+    const amount = document.getElementById('apPrice').value.trim();
+    const categoryId = document.getElementById('apCategory').value;
+    const imgUrl = document.getElementById('apImg').value.trim();
+
+    if (!title || !description || !amount || !categoryId) {
+        toast('Fill in all required fields', 'warning');
+        return;
+    }
+
+    const btn = document.getElementById('addProductBtn');
+    btn.disabled = true;
+    btn.textContent = 'Listing...';
+
+    try {
+        const response = await apiFetch(
+            `${API}/products/addProduct/${categoryId}`,
+            {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({
+                    title,
+                    description,
+                    amount: Number(amount),
+                    imgUrl: imgUrl || null
+                })
+            }
+        );
+
+        if (response.status === 401) {
+            toast('Session expired — sign in again', 'error');
+            return;
+        }
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            toast(data.message || 'Failed to add product', 'error');
+            return;
+        }
+
+        toast('Product listed successfully! 🎉', 'success');
+
+        closeModal('addProductModal');
+
+        document.getElementById('apTitle').value = '';
+        document.getElementById('apDesc').value = '';
+        document.getElementById('apPrice').value = '';
+        document.getElementById('apCategory').value = '';
+        resetAddProductImagePicker();
+
+        loadProducts();
+
+    } catch (error) {
+        console.error(error);
+        toast('Cannot reach server', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'List product';
+    }
+}
+
+const EP_IMG_MAX_BYTES = 2 * 1024 * 1024; // 2MB
+
+function handleEditProductImageUpload(inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  if(!file) return;
+
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
+    toast('Please choose a JPG, PNG, or WEBP image', 'warning');
+    inputEl.value='';
+    return;
+  }
+  if(file.size > EP_IMG_MAX_BYTES){
+    toast('Image is too large — max 2MB', 'warning');
+    inputEl.value='';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result;
+    document.getElementById('epImg').value = dataUrl;
+    document.getElementById('epImgUrl').value = '';
+    showEpImgPreview(dataUrl);
+  };
+  reader.onerror = () => toast('Could not read that image file', 'error');
+  reader.readAsDataURL(file);
+}
+
+function handleEditProductImageUrl(url){
+  url = (url || '').trim();
+  if(!url){
+    if(!document.getElementById('epImgFile').files.length){
+      document.getElementById('epImg').value = '';
+      hideEpImgPreview();
+    }
+    return;
+  }
+  document.getElementById('epImg').value = url;
+  document.getElementById('epImgFile').value = '';
+  showEpImgPreview(url);
+}
+
+function showEpImgPreview(src){
+  document.getElementById('epImgPreview').src = src;
+  document.getElementById('epImgPreviewWrap').style.display = 'block';
+  document.getElementById('epImgPlaceholder').style.display = 'none';
+}
+function hideEpImgPreview(){
+  document.getElementById('epImgPreviewWrap').style.display = 'none';
+  document.getElementById('epImgPlaceholder').style.display = 'block';
+  document.getElementById('epImgPreview').src = '';
+}
+function resetEditProductImagePicker(){
+  document.getElementById('epImg').value='';
+  document.getElementById('epImgUrl').value='';
+  document.getElementById('epImgFile').value='';
+  hideEpImgPreview();
+}
+
+    function openEditProduct(encoded){
+      const p=JSON.parse(decodeURIComponent(encoded));
+      document.getElementById('epId').value=p.id;
+      document.getElementById('epTitle').value=p.title||'';
+      document.getElementById('epDesc').value=p.description||'';
+      document.getElementById('epPrice').value=p.amount||'';
+      document.getElementById('epStatus').value=p.status||'AVAILABLE';
+      document.getElementById('epImg').value=p.imgUrl||'';
+      openModal('editProductModal');
+    }
+
+    async function doEditProduct(){
+      const productId=document.getElementById('epId').value;
+      const title=document.getElementById('epTitle').value.trim();
+      const description=document.getElementById('epDesc').value.trim();
+      const amount=document.getElementById('epPrice').value.trim();
+      const status=document.getElementById('epStatus').value;
+      const imgUrl=document.getElementById('epImg').value.trim();
+      if(!title||!description||!amount){toast('Fill in all required fields','warning');return}
+      const btn=document.getElementById('editProductBtn');btn.disabled=true;btn.textContent='Saving…';
+      try{
+        const r=await apiFetch(`${API}/products/updateProduct/${productId}`,{method:'PUT',headers:authHeaders(),body:JSON.stringify({title,description,amount,status,imgUrl:imgUrl||null})});
+        if(!r.ok){const d=await r.json();toast(d.message||'Update failed','error');return}
+        toast('Listing updated ✓','success');closeModal('editProductModal');loadProducts();
+      }catch{toast('Cannot reach server','error')}
+      finally{btn.disabled=false;btn.textContent='Save changes'}
+    }
+
+    async function deleteProduct(productId){
+      if(!confirm('Delete this product? This cannot be undone.'))return;
+      try{
+        const r=await apiFetch(`${API}/products/deleteProduct/${productId}`,{method:'DELETE',headers:authHeaders()});
+        if(!r.ok){toast('Failed to delete','error');return}
+        toast('Product deleted','success');closeModal('productModal');loadProducts();
+      }catch{toast('Cannot reach server','error')}
+    }
+
+    function switchMyProductsTab(tab){
+      document.querySelectorAll('#myProductsModal .profile-tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('#myProductsModal .profile-tab-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('mpTab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+      document.getElementById('mpTabBtn'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+      if(tab==='sell')loadMyProductsSellList();
+      if(tab==='buy')loadMyPurchases();
+    }
+
+    async function openMyProductsModal(){closeDropdown();openModal('myProductsModal');switchMyProductsTab('sell')}
+
+    async function loadMyProductsSellList(){
+      const el=document.getElementById('myProductsBody');
+      el.innerHTML='<div class="empty-state"><div class="empty-icon">📦</div><p>Loading…</p></div>';
+      try{
+        const r=await apiFetch(`${API}/products/getProductSellId/${currentUser.id}`,{headers:authHeaders()});
+        if(!r.ok)throw new Error();
+        const products=await r.json();
+        if(!products.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><h3>No listings yet</h3><p>Start selling by clicking "Sell Something".</p></div>';return}
+        el.innerHTML=products.map(p=>{
+          const hasImg=p.imgUrl&&(p.imgUrl.startsWith('http')||p.imgUrl.startsWith('data:image'));
+          const encoded=encodeURIComponent(JSON.stringify(p));
+          return `<div class="my-product-item">
+            <div class="my-product-img">${hasImg?`<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='📦'">`:' 📦'}</div>
+            <div class="my-product-info">
+              <div class="my-product-title">${escHtml(p.title)}</div>
+              <div class="my-product-meta">₹${escHtml(p.amount)} · <span class="status-badge status-${p.status||'AVAILABLE'}" style="font-size:.68rem">${p.status==='OUT_OF_STOCK'?'Sold':'Available'}</span></div>
+            </div>
+            <div class="my-product-actions">
+              <button class="btn btn-ghost btn-sm" onclick="closeModal('myProductsModal');openEditProduct('${encoded}')">✏️</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">🗑</button>
+            </div>
+          </div>`;
+        }).join('');
+      }catch{el.innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load.</p></div>'}
+    }
+
+    async function loadMyPurchases(){
+      const el=document.getElementById('myPurchasesBody');
+      el.innerHTML='<div class="empty-state"><div class="empty-icon">🛍️</div><p>Loading…</p></div>';
+      try{
+        const r=await apiFetch(`${API}/products/getProductBuyId/${currentUser.id}`,{headers:authHeaders()});
+        if(!r.ok)throw new Error();
+        const products=await r.json();
+        if(!products.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">🛍️</div><h3>No purchases yet</h3><p>Items you buy will show up here.</p></div>';return}
+        el.innerHTML=products.map(p=>{
+          const hasImg=p.imgUrl&&(p.imgUrl.startsWith('http')||p.imgUrl.startsWith('data:image'));
+          return `<div class="my-product-item">
+            <div class="my-product-img">${hasImg?`<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='📦'">`:' 📦'}</div>
+            <div class="my-product-info">
+              <div class="my-product-title">${escHtml(p.title)}</div>
+              <div class="my-product-meta">₹${escHtml(p.amount)} · Sold by ${escHtml(p.sellerName||'Unknown')}</div>
+            </div>
+            <div class="my-product-actions">
+              <button class="btn btn-ghost btn-sm" onclick="openReportModal(${p.id})">⚑</button>
+            </div>
+          </div>`;
+        }).join('');
+      }catch{el.innerHTML='<div class="empty-state"><div class="empty-icon">⚠️</div><p>Failed to load.</p></div>'}
+    }
+
+    function previewProfileImg(url){
+      const preview=document.getElementById('profileImgPreview');
+      const circle=document.getElementById('profileAvatarCircle');
+      if(url&&url.startsWith('http')){preview.src=url;preview.style.display='block';circle.style.display='none';}
+      else resetAvatarPreview();
+    }
+    function resetAvatarPreview(){
+      document.getElementById('profileImgPreview').style.display='none';
+      document.getElementById('profileAvatarCircle').style.display='flex';
+    }
+
+    function switchProfileTab(tab){
+      document.querySelectorAll('.profile-tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.profile-tab-panel').forEach(p=>p.classList.remove('active'));
+      document.getElementById('ptab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+      document.getElementById('ptabBtn'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+      if(tab==='sell')loadProfileSellList();
+      if(tab==='buy')loadProfileBuyList();
+    }
+
+    async function openProfileModal(){
+      closeDropdown();
+      if(!currentUser){toast('Sign in first','warning');return}
+      openModal('profileModal');switchProfileTab('edit');
+      document.getElementById('profileDisplayName').textContent='Loading…';
+      document.getElementById('profileDisplayId').textContent='';
+      document.getElementById('profileDisplayCollege').textContent='';
+      try{
+        const r=await apiFetch(`${API}/users/profile`,{headers:authHeaders()});
+        if(!r.ok)throw new Error('HTTP '+r.status);
+        const u=await r.json();
+        const name=u.name||u.username||'';
+        const college=u.college||'';
+        document.getElementById('profileUsername').value=name;
+        document.getElementById('profileCollege').value=college;
+        document.getElementById('profileDisplayName').textContent=name||'—';
+        document.getElementById('profileDisplayId').textContent='ID #'+(u.Id||u.id||currentUser.id);
+        document.getElementById('profileDisplayCollege').textContent=college?'🎓 '+college:'';
+        document.getElementById('profileAvatarCircle').textContent=(name||'U')[0].toUpperCase();
+        resetAvatarPreview();
+      }catch{
+        toast('Could not load profile','error');
+        document.getElementById('profileDisplayName').textContent=currentUser.username||'—';
+        document.getElementById('profileDisplayId').textContent='ID #'+currentUser.id;
+        document.getElementById('profileAvatarCircle').textContent=(currentUser.username||'U')[0].toUpperCase();
+        resetAvatarPreview();
+      }
+    }
+
+    async function doUpdateProfile(){
+      if(!currentUser)return;
+      const username=document.getElementById('profileUsername').value.trim();
+      const college=document.getElementById('profileCollege').value.trim();
+      if(!username){toast('Username cannot be empty','warning');return}
+      const btn=document.getElementById('profileSaveBtn');btn.disabled=true;btn.textContent='Saving…';
+      try{
+        const r=await apiFetch(`${API}/users/updateProfile/${currentUser.id}`,{
+          method:'PUT',headers:authHeaders(),
+          body:JSON.stringify({username,college})
+        });
+        if(!r.ok){const t=await r.text();toast(t||'Update failed','error');return}
+        currentUser.username=username;localStorage.setItem('cm_user',JSON.stringify(currentUser));
+        showUserMenu(currentUser);
+        document.getElementById('profileDisplayName').textContent=username;
+        document.getElementById('profileDisplayCollege').textContent=college?'🎓 '+college:'';
+        document.getElementById('profileAvatarCircle').textContent=username[0].toUpperCase();
+        toast('Profile updated ✓','success');
+      }catch{toast('Cannot reach server','error')}
+      finally{btn.disabled=false;btn.textContent='Save changes'}
+    }
+
+    function checkPasswordStrength(val){
+      const bar=document.getElementById('pwStrengthBar');
+      const label=document.getElementById('pwStrengthLabel');
+      if(!val){bar.style.display='none';label.textContent='';return}
+      bar.style.display='block';
+      const hasUpper=/[A-Z]/.test(val),hasNum=/[0-9]/.test(val),hasSpecial=/[^A-Za-z0-9]/.test(val);
+      const score=(val.length>=8?1:0)+(hasUpper?1:0)+(hasNum?1:0)+(hasSpecial?1:0);
+      if(score<=1){bar.className='pw-strength weak';label.className='pw-strength-label weak';label.textContent='Weak'}
+      else if(score<=2){bar.className='pw-strength medium';label.className='pw-strength-label medium';label.textContent='Medium'}
+      else{bar.className='pw-strength strong';label.className='pw-strength-label strong';label.textContent='Strong'}
+    }
+
+    async function doChangePassword(){
+      const currentPassword=document.getElementById('pwdCurrent').value;
+      const newPassword=document.getElementById('pwdNew').value;
+      const confirmPassword=document.getElementById('pwdConfirm').value;
+      if(!currentPassword||!newPassword||!confirmPassword){toast('Fill in all fields','warning');return}
+      if(newPassword.length<6){toast('New password must be at least 6 characters','warning');return}
+      if(newPassword!==confirmPassword){toast('New passwords do not match','error');return}
+      if(currentPassword===newPassword){toast('New password must be different from current','warning');return}
+      const btn=document.getElementById('pwdSaveBtn');btn.disabled=true;btn.textContent='Changing…';
+      try{
+        const r=await apiFetch(`${API}/users/changePassword`,{
+          method:'PUT',headers:authHeaders(),
+          body:JSON.stringify({currentPassword,newPassword})
+        });
+        const text=await r.text();
+        if(!r.ok){toast(text||'Password change failed','error');return}
+        toast('Password changed successfully ✓','success');
+        document.getElementById('pwdCurrent').value='';
+        document.getElementById('pwdNew').value='';
+        document.getElementById('pwdConfirm').value='';
+        document.getElementById('pwStrengthBar').style.display='none';
+        document.getElementById('pwStrengthLabel').textContent='';
+      }catch{toast('Cannot reach server','error')}
+      finally{btn.disabled=false;btn.textContent='Change Password'}
+    }
+
+    async function loadProfileSellList(){
+      const el=document.getElementById('profileSellList');
+      el.innerHTML='<div class="empty-state" style="padding:1.5rem"><div class="empty-icon">📦</div><p>Loading…</p></div>';
+      try{
+        const r=await apiFetch(`${API}/products/getProductSellId/${currentUser.id}`,{headers:authHeaders()});
+        if(!r.ok)throw new Error();
+        const products=await r.json();
+        if(!products.length){el.innerHTML='<div class="empty-state" style="padding:1.5rem"><div class="empty-icon">📭</div><p>No listings yet.</p></div>';return}
+        el.innerHTML=products.map(p=>{
+          const hasImg=p.imgUrl&&(p.imgUrl.startsWith('http')||p.imgUrl.startsWith('data:image'));
+          const encoded=encodeURIComponent(JSON.stringify(p));
+          return `<div class="my-product-item">
+            <div class="my-product-img">${hasImg?`<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='📦'">`:' 📦'}</div>
+            <div class="my-product-info">
+              <div class="my-product-title">${escHtml(p.title)}</div>
+              <div class="my-product-meta">₹${escHtml(p.amount)} · <span class="status-badge status-${p.status||'AVAILABLE'}" style="font-size:.68rem">${p.status==='OUT_OF_STOCK'?'Sold':'Available'}</span></div>
+            </div>
+            <div class="my-product-actions">
+              <button class="btn btn-ghost btn-sm" onclick="closeModal('profileModal');openEditProduct('${encoded}')">✏️</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">🗑</button>
+            </div>
+          </div>`;
+        }).join('');
+      }catch{el.innerHTML='<div class="empty-state" style="padding:1.5rem"><div class="empty-icon">⚠️</div><p>Failed to load.</p></div>'}
+    }
+
+    async function loadProfileBuyList(){
+      const el=document.getElementById('profileBuyList');
+      el.innerHTML='<div class="empty-state" style="padding:1.5rem"><div class="empty-icon">🛍️</div><p>Loading…</p></div>';
+      try{
+        const r=await apiFetch(`${API}/products/getProductBuyId/${currentUser.id}`,{headers:authHeaders()});
+        if(!r.ok)throw new Error();
+        const products=await r.json();
+        if(!products.length){el.innerHTML='<div class="empty-state" style="padding:1.5rem"><div class="empty-icon">🛍️</div><p>No purchases yet.</p></div>';return}
+        el.innerHTML=products.map(p=>{
+          const hasImg=p.imgUrl&&(p.imgUrl.startsWith('http')||p.imgUrl.startsWith('data:image'));
+          return `<div class="my-product-item">
+            <div class="my-product-img">${hasImg?`<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='📦'">`:' 📦'}</div>
+            <div class="my-product-info">
+              <div class="my-product-title">${escHtml(p.title)}</div>
+              <div class="my-product-meta">₹${escHtml(p.amount)} · Sold by ${escHtml(p.sellerName||'Unknown')}</div>
+            </div>
+          </div>`;
+        }).join('');
+      }catch{el.innerHTML='<div class="empty-state" style="padding:1.5rem"><div class="empty-icon">⚠️</div><p>Failed to load.</p></div>'}
+    }
+
+    function openReportModal(productId){
+      if(!currentUser){toast('Sign in to report','warning');return}
+      document.getElementById('reportProductId').value=productId;
+      document.getElementById('reportReason').value='';
+      openModal('reportModal');
+    }
+    async function doReport(){
+      const productId=document.getElementById('reportProductId').value;
+      const reason=document.getElementById('reportReason').value.trim();
+      if(!reason){toast('Please describe the issue','warning');return}
+      const btn=document.getElementById('reportBtn');btn.disabled=true;btn.textContent='Submitting…';
+      try{
+        const r=await apiFetch(`${API}/reports/addReport/${productId}`,{method:'POST',headers:authHeaders(),body:JSON.stringify({reason})});
+        if(!r.ok){const d=await r.json();toast(d.message||'Report failed','error');return}
+        toast('Report submitted. Thank you.','success');closeModal('reportModal');
+      }catch{toast('Cannot reach server','error')}
+      finally{btn.disabled=false;btn.textContent='Submit report'}
+    }
+
+    async function deleteAccount(){
+      const password=prompt('Enter your password to permanently delete your account:');
+      if(!password)return;
+      if(!confirm('This cannot be undone. Delete your account and all your data?'))return;
+      try{
+        const r=await apiFetch(`${API}/users/deleteUser`,{method:'DELETE',headers:authHeaders(),body:JSON.stringify({password})});
+        const d=await r.json();
+        if(d.success){toast('Account deleted','success');logout();location.reload();}
+        else toast(d.message||'Deletion failed','error');
+      }catch{toast('Server error','error')}
+    }
+
+    async function startBuyerChat(sellerId,productId){
+      if(!currentUser){toast('Sign in to chat','warning');return}
+      const buyerId=currentUser.id;const roomId=`product_${productId}_buyer_${buyerId}_seller_${sellerId}`;
+      try{
+        const checkRes=await fetch(`${API}/api/v1/rooms/${roomId}`);
+        if(!checkRes.ok){
+          const createRes=await fetch(`${API}/api/v1/rooms`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({roomId,sellerId,buyerId,productId})});
+          if(!createRes.ok){toast('Could not start chat','error');return}
+        }
+        closeModal('productModal');
+        openChatThread({roomId,buyerId,sellerId,productId},`Product #${productId}`);
+      }catch{toast('Cannot reach server','error')}
+    }
+
+    async function openChatInbox(mode){
+      if(!currentUser){toast('Sign in first','warning');return}
+      closeDropdown();
+      document.getElementById('chatInboxTitle').textContent=mode==='selling'?'🏪 Seller Chats':'🛒 Buyer Chats';
+      const body=document.getElementById('chatInboxBody');
+      body.innerHTML='<div class="inbox-empty">Loading…</div>';
+      openModal('chatInboxModal');
+      const endpoint=mode==='selling'?`${API}/api/v1/rooms/seller/${currentUser.id}`:`${API}/api/v1/rooms/buyer/${currentUser.id}`;
+      try{
+        const r=await fetch(endpoint);if(!r.ok)throw new Error();
+        const rooms=await r.json();
+        if(!rooms||!rooms.length){body.innerHTML=`<div class="inbox-empty">No chats yet.</div>`;return}
+        body.innerHTML=rooms.map(room=>{
+          const lastMsg=room.messages&&room.messages.length?room.messages[room.messages.length-1]:null;
+          const msgCount=room.messages?room.messages.length:0;
+          const otherLabel=mode==='selling'?`Buyer #${room.buyerId??'?'}`:`Seller #${room.sellerId??'?'}`;
+          const roomInfo={roomId:room.roomId,buyerId:room.buyerId,sellerId:room.sellerId,productId:room.productId};
+          const enc=encodeURIComponent(JSON.stringify(roomInfo));
+          const encLabel=encodeURIComponent(`Product #${room.productId??'?'} · ${otherLabel}`);
+          return `<div class="room-card" onclick="openChatThreadEncoded('${enc}','${encLabel}')">
+            <div class="room-card-meta">📦 Product #${room.productId??'?'} · ${escHtml(otherLabel)} · ${msgCount} msg${msgCount!==1?'s':''}</div>
+            <div class="room-card-preview">${lastMsg?'💬 '+escHtml(lastMsg.chat):'<em>No messages yet</em>'}</div>
+          </div>`;
+        }).join('');
+      }catch{body.innerHTML='<div class="inbox-empty">Failed to load chats.</div>'}
+    }
+
+    function openChatThreadEncoded(encodedRoom,encodedLabel){
+      openChatThread(JSON.parse(decodeURIComponent(encodedRoom)),decodeURIComponent(encodedLabel));
+    }
+
+    let ctStompClient=null,ctCurrentRoom=null,ctCurrentRoomInfo=null,ctConnected=false,ctReconnectTimer=null;
+
+    function openChatThread(roomOrId,titleLabel){
+      closeModal('chatInboxModal');
+      const roomId=typeof roomOrId==='string'?roomOrId:roomOrId.roomId;
+      ctCurrentRoom=roomId;ctCurrentRoomInfo=typeof roomOrId==='object'?roomOrId:null;
+      document.getElementById('chatThreadTitle').textContent=titleLabel||roomId;
+      document.getElementById('chatThreadBody').innerHTML=`<div class="chat-thread-empty"><div style="font-size:2rem">💬</div><div>No messages yet — say hello!</div></div>`;
+      const actionsBar=document.getElementById('ctSellerActions');
+      if(currentUser&&ctCurrentRoomInfo&&ctCurrentRoomInfo.sellerId===currentUser.id){
+        actionsBar.style.display='block';
+        const btn=document.getElementById('ctMarkSoldBtn');btn.disabled=false;btn.textContent='✅ Mark as Sold to this buyer';
+      }else{actionsBar.style.display='none'}
+      openModal('chatThreadModal');
+      loadChatThreadHistory(roomId);ctConnectWS(roomId);
+    }
+
+    async function ctMarkAsSold(){
+      if(!ctCurrentRoomInfo||!ctCurrentRoomInfo.buyerId||!ctCurrentRoomInfo.productId){toast('Missing info','error');return}
+      if(!confirm('Mark this product as sold to this buyer?'))return;
+      const btn=document.getElementById('ctMarkSoldBtn');btn.disabled=true;btn.textContent='Marking…';
+      try{
+        const r=await apiFetch(`${API}/products/sell/${ctCurrentRoomInfo.buyerId}/${ctCurrentRoomInfo.productId}`,{method:'PUT',headers:authHeaders()});
+        if(!r.ok){toast('Failed','error');btn.disabled=false;btn.textContent='✅ Mark as Sold to this buyer';return}
+        toast('Marked as sold ✓','success');btn.textContent='✅ Marked as sold';loadProducts();
+      }catch{toast('Cannot reach server','error');btn.disabled=false;btn.textContent='✅ Mark as Sold to this buyer'}
+    }
+
+    function closeChatThread(){closeModal('chatThreadModal');disconnectChatThread()}
+    function disconnectChatThread(){
+      if(ctStompClient&&ctStompClient.connected){try{ctStompClient.disconnect()}catch{}}
+      ctStompClient=null;if(ctReconnectTimer){clearTimeout(ctReconnectTimer);ctReconnectTimer=null}
+      ctConnected=false;ctCurrentRoom=null;ctCurrentRoomInfo=null;
+      document.getElementById('ctSellerActions').style.display='none';updateCtConnDot(false);
+    }
+
+    async function loadChatThreadHistory(roomId){
+      try{
+        const r=await fetch(`${API}/api/v1/rooms/${roomId}/message`);
+        if(r.ok){const msgs=await r.json();renderChatThreadMessages(msgs)}
+      }catch{}
+    }
+
+    function ctConnectWS(roomId){
+      if(ctStompClient&&ctStompClient.connected)return;
+      const sock=new SockJS(`${API}/chat`);ctStompClient=Stomp.over(sock);ctStompClient.debug=null;
+      ctStompClient.connect({},()=>{
+        ctConnected=true;updateCtConnDot(true);
+        ctStompClient.subscribe(`/topic/room/${roomId}`,(frame)=>{
+          try{ctAppendBubble(JSON.parse(frame.body),true)}catch{}
+        });
+      },()=>{
+        ctConnected=false;updateCtConnDot(false);
+        if(ctCurrentRoom===roomId)ctReconnectTimer=setTimeout(()=>ctConnectWS(roomId),3000);
+      });
+    }
+
+    function updateCtConnDot(ok){const dot=document.getElementById('ctConnDot');if(dot)dot.classList.toggle('off',!ok)}
+
+    function ctSendMsg(){
+      const input=document.getElementById('ctMsgInput');const content=input.value.trim();
+      if(!content)return;
+      if(!ctConnected||!ctStompClient){toast('Not connected — please wait…','error');return}
+      ctStompClient.send(`/app/sendMessage/${ctCurrentRoom}`,{},JSON.stringify({content,sender:currentUser.username,roomId:ctCurrentRoom}));
+      input.value='';input.focus();
+    }
+
+    function renderChatThreadMessages(msgs){
+      const body=document.getElementById('chatThreadBody');body.innerHTML='';
+      if(!msgs||!msgs.length){body.innerHTML=`<div class="chat-thread-empty"><div style="font-size:2rem">💬</div><div>No messages yet — say hello!</div></div>`;return}
+      let lastDate=null;
+      msgs.forEach(msg=>{
+        const dateStr=ctFmtDate(msg.time);
+        if(dateStr!==lastDate){lastDate=dateStr;const div=document.createElement('div');div.style.cssText='text-align:center;font-size:.68rem;color:var(--muted);margin:.5rem 0;font-family:var(--mono)';div.textContent=dateStr;body.appendChild(div)}
+        ctAppendBubble(msg,false);
+      });
+      ctScrollBottom();
+    }
+
+    function ctAppendBubble(msg,scroll){
+      const body=document.getElementById('chatThreadBody');
+      const emptyEl=body.querySelector('.chat-thread-empty');if(emptyEl)emptyEl.remove();
+      const isMine=msg.sender===(currentUser&&currentUser.username);
+      const group=document.createElement('div');group.className=`ct-msg-group ${isMine?'mine':'other'}`;
+      if(!isMine){const n=document.createElement('div');n.className='ct-sender';n.textContent=msg.sender;group.appendChild(n)}
+      const bubble=document.createElement('div');bubble.className='ct-bubble';bubble.textContent=msg.chat;group.appendChild(bubble);
+      const ts=document.createElement('div');ts.className='ct-time';ts.textContent=ctFmtTime(msg.time);group.appendChild(ts);
+      body.appendChild(group);if(scroll)ctScrollBottom();
+    }
+
+    function ctScrollBottom(){const b=document.getElementById('chatThreadBody');if(b)b.scrollTop=b.scrollHeight}
+    function ctFmtTime(t){if(!t)return'';return new Date(t).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}
+    function ctFmtDate(t){
+      if(!t)return'Today';const d=new Date(t),today=new Date();
+      if(d.toDateString()===today.toDateString())return'Today';
+      const yest=new Date(today);yest.setDate(today.getDate()-1);
+      if(d.toDateString()===yest.toDateString())return'Yesterday';
+      return d.toLocaleDateString([],{month:'short',day:'numeric',year:'numeric'});
+    }
+
+    function escHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+    let fpMobile='';
+
+function resetForgotPasswordFlow(){
+  document.getElementById('fpStepMobile').style.display='block';
+  document.getElementById('fpStepOtp').style.display='none';
+  document.getElementById('fpStepReset').style.display='none';
+  document.getElementById('fpStepDone').style.display='none';
+  document.getElementById('fpTitle').textContent='Reset your password';
+  document.getElementById('fpMobile').value='';
+  document.getElementById('fpOtp').value='';
+  document.getElementById('fpNewPassword').value='';
+  document.getElementById('fpConfirmPassword').value='';
+  document.getElementById('fpDevOtpHint').textContent='';
+  document.getElementById('pwStrengthBar').style.display='none';
+  document.getElementById('pwStrengthLabel').textContent='';
+  fpMobile='';
+}
+
+function closeForgotPasswordModal(){
+  closeModal('forgotPasswordModal');
+  resetForgotPasswordFlow();
+}
+
+async function doSendOtp(){
+  const mobile=document.getElementById('fpMobile').value.trim();
+  if(!/^[6-9]\d{9}$/.test(mobile)){toast('Enter a valid 10-digit mobile number','warning');return}
+  const btn=document.getElementById('fpSendOtpBtn');btn.disabled=true;btn.textContent='Sending…';
+  try{
+    const r=await fetch(`${API}/auth/forgot-password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobile})});
+    const d=await r.json();
+    if(!r.ok){toast(d.message||'Could not send OTP','error');return}
+    fpMobile=mobile;
+    document.getElementById('fpMobileDisplay').textContent=mobile;
+    document.getElementById('fpTitle').textContent='Verify OTP';
+    document.getElementById('fpStepMobile').style.display='none';
+    document.getElementById('fpStepOtp').style.display='block';
+    document.getElementById('fpOtp').value='';
+    document.getElementById('fpOtp').focus();
+    // devOtp is only present in dev builds (no SMS gateway wired up yet)
+    document.getElementById('fpDevOtpHint').textContent=d.devOtp?`Dev mode — your OTP is ${d.devOtp}`:'';
+    toast('OTP sent','success');
+  }catch{toast('Cannot reach server','error')}
+  finally{btn.disabled=false;btn.textContent='Send OTP'}
+}
+
+async function doVerifyOtp(){
+  const otp=document.getElementById('fpOtp').value.trim();
+  if(!otp||otp.length!==6){toast('Enter the 6-digit OTP','warning');return}
+  const btn=document.getElementById('fpVerifyBtn');btn.disabled=true;btn.textContent='Verifying…';
+  try{
+    const r=await fetch(`${API}/auth/verify-otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobile:fpMobile,otp})});
+    const d=await r.json();
+    if(!r.ok){toast(d.message||'Invalid or expired OTP','error');return}
+    document.getElementById('fpTitle').textContent='Set new password';
+    document.getElementById('fpStepOtp').style.display='none';
+    document.getElementById('fpStepReset').style.display='block';
+    document.getElementById('fpNewPassword').focus();
+    toast('OTP verified ✓','success');
+  }catch{toast('Cannot reach server','error')}
+  finally{btn.disabled=false;btn.textContent='Verify OTP'}
+}
+
+async function doResetPassword(){
+  const otp=document.getElementById('fpOtp').value.trim();
+  const newPassword=document.getElementById('fpNewPassword').value;
+  const confirmPassword=document.getElementById('fpConfirmPassword').value;
+  if(!newPassword||newPassword.length<6){toast('Password must be at least 6 characters','warning');return}
+  if(newPassword!==confirmPassword){toast('Passwords do not match','error');return}
+  const btn=document.getElementById('fpResetBtn');btn.disabled=true;btn.textContent='Resetting…';
+  try{
+    const r=await fetch(`${API}/auth/reset-password`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mobile:fpMobile,otp,newPassword})});
+    const d=await r.json();
+    if(!r.ok){toast(d.message||'Reset failed','error');return}
+    document.getElementById('fpStepReset').style.display='none';
+    document.getElementById('fpStepDone').style.display='block';
+    document.getElementById('fpTitle').textContent='All set!';
+  }catch{toast('Cannot reach server','error')}
+  finally{btn.disabled=false;btn.textContent='Reset Password'}
+}
+</script>
+</body>
+</html>
