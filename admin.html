@@ -1,0 +1,1094 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Admin Panel — CampusMarket</title>
+        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+        <style>
+            *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+            :root{
+            --ink:#0f0f11;--ink2:#2a2a30;--muted:#6b6b7a;--border:#e2e2ea;
+            --surface:#f7f7fb;--white:#fff;
+            --primary:#5b3ff8;--primary-light:#ede9ff;
+            --accent:#ff6b35;--success:#22c55e;--danger:#ef4444;--warning:#f59e0b;
+            --gold:#d97706;
+            --radius:12px;--radius-sm:8px;
+            --shadow:0 2px 8px rgba(0,0,0,.08);--shadow-md:0 8px 24px rgba(0,0,0,.12);
+            --font:'Space Grotesk',sans-serif;--mono:'Space Mono',monospace;
+            }
+            body{font-family:var(--font);background:var(--surface);color:var(--ink);display:flex;min-height:100vh}
+
+            /* ── SIDEBAR ── */
+            .sidebar{width:240px;background:var(--ink);flex-shrink:0;display:flex;flex-direction:column;min-height:100vh}
+            .sidebar-logo{padding:1.2rem 1.4rem;border-bottom:1px solid rgba(255,255,255,.1);font-family:var(--mono);font-size:1rem;color:#fff;font-weight:700}
+            .sidebar-logo span{color:var(--primary)}
+            .sidebar-logo small{display:block;font-size:.65rem;color:rgba(255,255,255,.45);font-weight:400;margin-top:.15rem;letter-spacing:.12em;text-transform:uppercase}
+            .nav-section{padding:.8rem 0;border-bottom:1px solid rgba(255,255,255,.08)}
+            .nav-label{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:rgba(255,255,255,.35);padding:.3rem 1.4rem .5rem;font-family:var(--mono)}
+            .nav-item{display:flex;align-items:center;gap:.7rem;padding:.6rem 1.4rem;color:rgba(255,255,255,.65);font-size:.88rem;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;font-family:var(--font)}
+            .nav-item:hover{background:rgba(255,255,255,.08);color:#fff}
+            .nav-item.active{background:var(--primary);color:#fff}
+            .nav-item .icon{font-size:1rem;width:20px;text-align:center}
+            .sidebar-bottom{margin-top:auto;padding:1rem 1.4rem;border-top:1px solid rgba(255,255,255,.08)}
+            .sidebar-user{color:rgba(255,255,255,.65);font-size:.8rem}
+            .sidebar-user .name{color:#fff;font-weight:600;font-size:.88rem}
+            .sidebar-user .role-tag{font-size:.68rem;font-family:var(--mono);margin-top:.15rem}
+            .sidebar-user .role-tag.super{color:#fbbf24}
+            .sidebar-user .role-tag.admin{color:#a78bfa}
+            .btn-logout{margin-top:.6rem;background:rgba(239,68,68,.2);color:#fca5a5;border:none;padding:.4rem .8rem;border-radius:var(--radius-sm);cursor:pointer;font-family:var(--font);font-size:.8rem;font-weight:600;transition:all .15s;width:100%}
+            .btn-logout:hover{background:var(--danger);color:#fff}
+
+            /* ── MAIN ── */
+            .main{flex:1;display:flex;flex-direction:column;min-height:100vh;overflow:hidden}
+            .topbar{background:var(--white);border-bottom:1px solid var(--border);padding:.8rem 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+            .topbar-title{font-size:1rem;font-weight:700;color:var(--ink)}
+            .topbar-right{display:flex;gap:.5rem;align-items:center}
+            .badge{font-size:.72rem;font-weight:700;padding:.2rem .5rem;border-radius:20px;font-family:var(--mono)}
+            .badge-admin{background:var(--primary-light);color:var(--primary)}
+            .badge-super{background:#fef3c7;color:var(--gold)}
+            .content{flex:1;padding:1.5rem;overflow-y:auto}
+
+            /* ── STATS ROW ── */
+            .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+            .stat-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.2rem}
+            .stat-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.4rem;font-family:var(--mono)}
+            .stat-value{font-size:1.8rem;font-weight:700;color:var(--ink);font-family:var(--mono);line-height:1}
+            .stat-sub{font-size:.75rem;color:var(--muted);margin-top:.3rem}
+            .stat-card.primary{border-color:var(--primary);background:var(--primary-light)}
+            .stat-card.primary .stat-value{color:var(--primary)}
+
+            /* ── PANELS ── */
+            .panel{display:none}
+            .panel.active{display:block}
+
+            /* ── TABLE ── */
+            .table-wrap{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+            .table-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+            .table-title{font-size:.88rem;font-weight:700;color:var(--ink)}
+            table{width:100%;border-collapse:collapse;font-size:.85rem}
+            th{background:var(--surface);padding:.7rem 1rem;text-align:left;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-family:var(--mono);border-bottom:1px solid var(--border)}
+            td{padding:.75rem 1rem;border-bottom:1px solid var(--border);color:var(--ink2);vertical-align:middle}
+            tr:last-child td{border-bottom:none}
+            tr:hover td{background:var(--surface)}
+            .user-row{display:flex;align-items:center;gap:.6rem}
+            .avatar{width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;flex-shrink:0}
+            .avatar.lg{width:52px;height:52px;font-size:1.2rem}
+            .avatar.super-admin{background:linear-gradient(135deg,#f59e0b,#d97706)}
+            .avatar.admin-role{background:var(--primary)}
+            .role-badge{font-size:.7rem;font-weight:600;padding:.15rem .45rem;border-radius:20px;display:inline-block;margin-right:.2rem}
+            .role-super{background:#fef3c7;color:var(--gold);border:1px solid #fbbf24}
+            .role-admin{background:#ede9ff;color:var(--primary)}
+            .role-user{background:#dcfce7;color:#16a34a}
+            .status-available{background:#dcfce7;color:#16a34a}
+            .status-sold{background:#fee2e2;color:var(--danger)}
+            .action-row{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+
+            /* ── FORMS ── */
+            .btn{font-family:var(--font);font-size:.82rem;font-weight:600;padding:.4rem .85rem;border-radius:var(--radius-sm);cursor:pointer;border:none;transition:all .15s}
+            .btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:#4a2fe0}
+            .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#dc2626}
+            .btn-ghost{background:transparent;color:var(--muted);border:1.5px solid var(--border)}.btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+            .btn-warning{background:var(--warning);color:#fff}
+            .btn-gold{background:var(--gold);color:#fff}.btn-gold:hover{background:#b45309}
+            .btn-sm{padding:.3rem .6rem;font-size:.75rem}
+            .btn:disabled{opacity:.45;cursor:not-allowed}
+
+            .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+            .section-title{font-size:.95rem;font-weight:700;color:var(--ink)}
+            .form-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:1.3rem;margin-bottom:1.2rem}
+            .form-group{margin-bottom:.9rem}
+            .form-label{display:block;font-size:.78rem;font-weight:600;color:var(--ink2);margin-bottom:.3rem}
+            .form-input{width:100%;padding:.55rem .8rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font);font-size:.88rem;color:var(--ink);background:var(--white);outline:none;transition:border-color .2s}
+            .form-input:focus{border-color:var(--primary)}
+
+            /* ── PERMISSION INFO BOX ── */
+            .perm-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.8rem 1rem;margin-bottom:1rem;font-size:.8rem;color:var(--ink2);line-height:1.6}
+            .perm-box b{color:var(--ink)}
+            .perm-super{border-left:3px solid var(--gold)}
+            .perm-admin{border-left:3px solid var(--primary)}
+
+            /* ── USER DETAIL MODAL ── */
+            .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+            .modal-overlay.open{display:flex}
+            .modal{background:var(--white);border-radius:16px;width:100%;max-width:640px;max-height:90vh;box-shadow:var(--shadow-md);overflow:hidden;display:flex;flex-direction:column}
+            .modal-header{padding:1.1rem 1.3rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+            .modal-title{font-size:.95rem;font-weight:700;color:var(--ink)}
+            .modal-close{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted)}
+            .modal-body{padding:1.2rem 1.3rem;overflow-y:auto;flex:1}
+            .modal-footer{padding:.8rem 1.3rem;border-top:1px solid var(--border);display:flex;gap:.6rem;justify-content:flex-end;flex-shrink:0;flex-wrap:wrap}
+
+            .ud-profile{display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem;padding-bottom:1.2rem;border-bottom:1px solid var(--border)}
+            .ud-name{font-size:1.1rem;font-weight:700}
+            .ud-college{font-size:.8rem;color:var(--muted);font-family:var(--mono);margin-top:.2rem}
+            .ud-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem;margin-bottom:1.2rem}
+            .ud-stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.7rem .9rem;text-align:center}
+            .ud-stat-val{font-size:1.3rem;font-weight:700;font-family:var(--mono);color:var(--ink)}
+            .ud-stat-lbl{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-family:var(--mono);margin-top:.15rem}
+            .ud-section-title{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-family:var(--mono);margin-bottom:.6rem;margin-top:1rem}
+            .ud-product-row{display:flex;align-items:center;gap:.7rem;padding:.55rem .7rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);margin-bottom:.4rem}
+            .ud-product-img{width:36px;height:36px;border-radius:6px;background:var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden}
+            .ud-product-img img{width:100%;height:100%;object-fit:cover}
+            .ud-product-title{font-size:.85rem;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+            .ud-product-price{font-size:.82rem;font-weight:700;color:var(--accent);font-family:var(--mono)}
+            .ud-report-row{padding:.55rem .7rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:#fff8f8;margin-bottom:.4rem}
+            .ud-report-reason{font-size:.84rem;color:var(--ink2);margin-bottom:.25rem}
+            .ud-report-meta{font-size:.72rem;color:var(--muted);font-family:var(--mono)}
+            .ud-empty{text-align:center;padding:1rem;color:var(--muted);font-size:.82rem;background:var(--surface);border-radius:var(--radius-sm)}
+
+            /* ── DELETE CONFIRM MODAL ── */
+            .confirm-modal{background:var(--white);border-radius:16px;width:100%;max-width:400px;box-shadow:var(--shadow-md);padding:1.5rem}
+            .confirm-title{font-size:1rem;font-weight:700;color:var(--danger);margin-bottom:.5rem}
+            .confirm-body{font-size:.85rem;color:var(--ink2);line-height:1.6;margin-bottom:1.2rem}
+            .confirm-actions{display:flex;gap:.6rem;justify-content:flex-end}
+
+            /* ── TOAST ── */
+            .toast-container{position:fixed;bottom:1.5rem;right:1.5rem;display:flex;flex-direction:column;gap:.5rem;z-index:999}
+            .toast{background:var(--ink);color:#fff;padding:.65rem 1rem;border-radius:var(--radius-sm);font-size:.83rem;box-shadow:var(--shadow-md);min-width:200px;display:flex;align-items:center;gap:.5rem;animation:slideIn .3s ease}
+            .toast.success{background:#166534}.toast.error{background:#991b1b}.toast.warning{background:#92400e}
+            @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+            .spinner{width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;margin:1.5rem auto}
+            @keyframes spin{to{transform:rotate(360deg)}}
+
+            .empty-state{text-align:center;padding:2.5rem 1rem;color:var(--muted)}
+            .empty-icon{font-size:2.5rem;margin-bottom:.6rem;opacity:.5}
+            .empty-state p{font-size:.88rem}
+
+            .login-screen{display:flex;flex:1;align-items:center;justify-content:center;min-height:100vh;background:var(--surface)}
+            .login-card{background:var(--white);border:1.5px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:360px;box-shadow:var(--shadow-md)}
+            .login-logo{font-family:var(--mono);font-size:1.2rem;font-weight:700;color:var(--ink);margin-bottom:.2rem}
+            .login-logo span{color:var(--primary)}
+            .login-sub{font-size:.8rem;color:var(--muted);margin-bottom:1.5rem}
+
+            @media(max-width:768px){
+            .sidebar{display:none}.stats-row{grid-template-columns:1fr 1fr}
+            .ud-stats{grid-template-columns:1fr 1fr}
+            }
+        </style>
+    </head>
+    <body>
+
+    <!-- ════════ USER DETAIL MODAL ════════ -->
+    <div class="modal-overlay" id="modalUserDetail">
+        <div class="modal">
+            <div class="modal-header">
+                <span class="modal-title">User Detail</span>
+                <button class="modal-close" onclick="closeUserModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalUserBody"><div class="spinner"></div></div>
+            <div class="modal-footer" id="modalUserFooter">
+                <button class="btn btn-ghost" onclick="closeUserModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════ DELETE CONFIRM MODAL ════════ -->
+    <div class="modal-overlay" id="modalConfirmDelete">
+        <div class="confirm-modal">
+            <div class="confirm-title">⚠️ Delete User</div>
+            <div class="confirm-body" id="confirmDeleteBody">Are you sure?</div>
+            <div class="confirm-actions">
+                <button class="btn btn-ghost" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn" onclick="executeDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ════════ LOGIN ════════ -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-card">
+            <div class="login-logo">Campus<span>Market</span></div>
+            <div class="login-sub">Admin Panel — restricted access</div>
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input class="form-input" id="adminUsername" type="text" placeholder="Admin username" autocomplete="username"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input class="form-input" id="adminPassword" type="password" placeholder="••••••••"
+                    onkeydown="if(event.key==='Enter')doAdminLogin()" autocomplete="current-password"/>
+            </div>
+            <button class="btn btn-primary" style="width:100%;padding:.65rem;font-size:.9rem"
+                    onclick="doAdminLogin()" id="adminLoginBtn">Sign in as Admin</button>
+            <p style="margin-top:.8rem;font-size:.78rem;color:var(--muted);text-align:center">
+                Only ADMIN and SUPER_ADMIN can access this panel.
+            </p>
+        </div>
+    </div>
+
+    <!-- ════════ ADMIN APP ════════ -->
+    <div id="adminApp" style="display:none;flex:1">
+
+        <div class="sidebar">
+            <div class="sidebar-logo">Campus<span>Market</span><small>Admin Panel</small></div>
+            <div class="nav-section">
+                <div class="nav-label">Overview</div>
+                <button class="nav-item active" onclick="switchPanel('dashboard',this)"><span class="icon">📊</span> Dashboard</button>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">Management</div>
+                <button class="nav-item" onclick="switchPanel('users',this)"><span class="icon">👥</span> Users</button>
+                <button class="nav-item" onclick="switchPanel('products',this)"><span class="icon">📦</span> Products</button>
+                <button class="nav-item" onclick="switchPanel('categories',this)"><span class="icon">🏷</span> Categories</button>
+                <button class="nav-item" onclick="switchPanel('reports',this)"><span class="icon">⚑</span> Reports</button>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">Admin</div>
+                <button class="nav-item" id="navPromote" onclick="switchPanel('promote',this)"><span class="icon">🛡</span> Add Admin</button>
+            </div>
+            <div class="sidebar-bottom">
+                <div class="sidebar-user">
+                    <div class="name" id="sidebarUsername">Admin</div>
+                    <div class="role-tag" id="sidebarRoleTag">#0</div>
+                </div>
+                <button class="btn-logout" onclick="adminLogout()">Sign out</button>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="topbar">
+                <div class="topbar-title" id="topbarTitle">Dashboard</div>
+                <div class="topbar-right">
+                    <span class="badge" id="topbarBadge">ADMIN</span>
+                    <a href="index.html" style="font-size:.82rem;color:var(--muted);text-decoration:none">← Back to store</a>
+                </div>
+            </div>
+
+            <div class="content">
+
+                <!-- DASHBOARD -->
+                <div class="panel active" id="panel-dashboard">
+                    <div class="stats-row">
+                        <div class="stat-card primary">
+                            <div class="stat-label">Total Users</div>
+                            <div class="stat-value" id="statUsers">—</div>
+                            <div class="stat-sub">Registered accounts</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Products</div>
+                            <div class="stat-value" id="statProducts">—</div>
+                            <div class="stat-sub">All listings</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Categories</div>
+                            <div class="stat-value" id="statCats">—</div>
+                            <div class="stat-sub">Active categories</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Available</div>
+                            <div class="stat-value" id="statAvailable" style="color:var(--success)">—</div>
+                            <div class="stat-sub">Active listings</div>
+                        </div>
+                    </div>
+
+                    <!-- Permission info box based on role -->
+                    <div class="perm-box" id="dashPermBox" style="margin-bottom:1rem"></div>
+
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+                        <div class="form-card">
+                            <div class="section-header"><div class="section-title">Quick Actions</div></div>
+                            <div style="display:flex;flex-direction:column;gap:.5rem">
+                                <button class="btn btn-primary" onclick="switchPanel('users',navBtns('users'))">👥 Manage Users</button>
+                                <button class="btn btn-ghost"   onclick="switchPanel('categories',navBtns('categories'))">🏷 Manage Categories</button>
+                                <button class="btn btn-ghost"   onclick="switchPanel('products',navBtns('products'))">📦 View All Products</button>
+                                <button class="btn btn-ghost"   onclick="switchPanel('promote',navBtns('promote'))">🛡 Add New Admin</button>
+                            </div>
+                        </div>
+                        <div class="form-card">
+                            <div class="section-header"><div class="section-title">Recent Users</div></div>
+                            <div id="dashRecentUsers"><div class="spinner"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- USERS -->
+                <div class="panel" id="panel-users">
+                    <div class="section-header">
+                        <div class="section-title">All Users</div>
+                        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+                            <input class="form-input" id="userSearchName" placeholder="Search by name…"
+                                style="width:150px;padding:.4rem .7rem;font-size:.82rem" oninput="debounceUserSearch()"/>
+                            <input class="form-input" id="userSearchCollege" placeholder="Filter by college…"
+                                style="width:150px;padding:.4rem .7rem;font-size:.82rem" oninput="debounceUserSearch()"/>
+                            <button class="btn btn-ghost btn-sm" onclick="clearUserSearch()">Clear</button>
+                            <select class="form-input" id="userPageSize"
+                                    style="width:auto;padding:.4rem .6rem;font-size:.82rem" onchange="loadUsers()">
+                                <option value="10">10/page</option>
+                                <option value="20" selected>20/page</option>
+                                <option value="50">50/page</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Who-can-delete-whom info box -->
+                    <div class="perm-box" id="usersPermBox" style="margin-bottom:1rem"></div>
+
+                    <div class="table-wrap">
+                        <div class="table-header">
+                            <div class="table-title">Registered users</div>
+                            <span style="font-size:.78rem;color:var(--muted)">Click <b>View</b> for full profile · Click <b>Delete</b> to remove</span>
+                        </div>
+                        <table>
+                            <thead><tr><th>User</th><th>ID</th><th>College</th><th>Roles</th><th>Actions</th></tr></thead>
+                            <tbody id="usersTable">
+                            <tr><td colspan="5" style="text-align:center;padding:2rem"><div class="spinner"></div></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="usersPagination" style="display:flex;gap:.4rem;justify-content:center;margin-top:1rem"></div>
+                </div>
+
+                <!-- PRODUCTS -->
+                <div class="panel" id="panel-products">
+                    <div class="section-header">
+                        <div class="section-title">All Products</div>
+                        <select class="form-input" id="productFilterStatus"
+                                style="width:auto;padding:.4rem .6rem;font-size:.82rem" onchange="loadAdminProducts()">
+                            <option value="">All Status</option>
+                            <option value="AVAILABLE">Available</option>
+                            <option value="OUT_OF_STOCK">Sold</option>
+                        </select>
+                    </div>
+                    <div class="table-wrap">
+                        <div class="table-header"><div class="table-title">Listed products</div></div>
+                        <table>
+                            <thead><tr><th>Product</th><th>Price</th><th>Seller</th><th>College</th><th>Category</th><th>Status</th></tr></thead>
+                            <tbody id="productsTable"><tr><td colspan="6" style="text-align:center;padding:2rem"><div class="spinner"></div></td></tr></tbody>
+                        </table>
+                    </div>
+                    <div id="productsPagination" style="display:flex;gap:.4rem;justify-content:center;margin-top:1rem"></div>
+                </div>
+
+                <!-- CATEGORIES -->
+                <div class="panel" id="panel-categories">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:start">
+                        <div>
+                            <div class="section-header"><div class="section-title">Add Categories</div></div>
+                            <div class="form-card">
+                                <div id="newCatFields">
+                                    <div class="form-group">
+                                        <label class="form-label">Category name</label>
+                                        <input class="form-input new-cat-input" placeholder="e.g. Textbooks"/>
+                                    </div>
+                                </div>
+                                <div style="display:flex;gap:.5rem;margin-top:.2rem">
+                                    <button class="btn btn-ghost" onclick="addCatField()">+ Add another</button>
+                                    <button class="btn btn-primary" onclick="doAddCategories()">Save</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-header"><div class="section-title">Existing Categories</div></div>
+                            <div class="table-wrap">
+                                <table>
+                                    <thead><tr><th>ID</th><th>Name</th><th>Action</th></tr></thead>
+                                    <tbody id="catsTable"><tr><td colspan="3" style="text-align:center;padding:1.5rem"><div class="spinner"></div></td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- REPORTS -->
+                <div class="panel" id="panel-reports">
+                    <div class="section-header"><div class="section-title">Reports</div></div>
+                    <div class="form-card" style="background:var(--primary-light);border-color:var(--primary);margin-bottom:1.2rem">
+                        <div style="display:flex;gap:.8rem;align-items:flex-start">
+                            <div style="font-size:1.4rem">ℹ️</div>
+                            <div>
+                                <div style="font-weight:700;font-size:.9rem;color:var(--primary);margin-bottom:.3rem">How to view reports</div>
+                                <p style="font-size:.83rem;color:var(--ink2);line-height:1.6">
+                                    Go to <b>Users</b> → click <b>View</b> on any user → scroll to <b>Reports Made</b> and <b>Reports Received</b>.
+                                </p>
+                                <button class="btn btn-primary btn-sm" style="margin-top:.7rem"
+                                        onclick="switchPanel('users',navBtns('users'))">→ Go to Users</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-card">
+                        <div class="section-title" style="margin-bottom:.8rem">Quick Lookup by User ID</div>
+                        <div style="display:flex;gap:.6rem;align-items:flex-end">
+                            <div class="form-group" style="flex:1;margin-bottom:0">
+                                <label class="form-label">User ID</label>
+                                <input class="form-input" id="reportUserId" type="number" placeholder="Enter user ID"/>
+                            </div>
+                            <button class="btn btn-primary" onclick="quickViewUserReports()">View Reports</button>
+                        </div>
+                    </div>
+                    <div id="quickReportResult"></div>
+                </div>
+
+                <!-- PROMOTE ADMIN -->
+                <div class="panel" id="panel-promote">
+                    <div class="section-header"><div class="section-title">Promote User to Admin</div></div>
+                    <div style="max-width:440px">
+                        <div class="form-card">
+                            <p style="font-size:.83rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
+                                Enter the exact <b>username</b> and <b>User ID</b> of the user you want to promote.
+                                They will gain the <code>ADMIN</code> role.
+                            </p>
+                            <div class="form-group">
+                                <label class="form-label">Username</label>
+                                <input class="form-input" id="promoteUsername" placeholder="e.g. john"/>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">User ID</label>
+                                <input class="form-input" id="promoteUserId" type="number" placeholder="e.g. 12"/>
+                            </div>
+                            <button class="btn btn-primary" style="width:100%" onclick="promoteToAdmin()">🛡 Promote to Admin</button>
+                            <p style="font-size:.75rem;color:var(--muted);margin-top:.6rem">
+                                Tip: Find user IDs in the Users panel.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // const API = 'http://localhost:8084';
+        const API = 'https://campus-market-1-ot8u.onrender.com';
+
+        let adminToken   = localStorage.getItem('cm_admin_token') || null;
+        let adminUser    = JSON.parse(localStorage.getItem('cm_admin_user') || 'null');
+        let usersPage    = 0;
+        let productsPage = 0;
+        let modalCurrentUser    = null;
+        let pendingDeleteUserId = null;     // set just before confirm modal opens
+
+        /* ─── ROLE HELPERS ─── */
+        function parseRoles(roles) {
+            if (!roles || !Array.isArray(roles)) return [];
+            return roles.map(r => String(r).replace('ROLE_','').toUpperCase());
+        }
+        function isSuperAdmin(roles) { return parseRoles(roles).includes('SUPER_ADMIN'); }
+        function isAdmin(roles)      { return parseRoles(roles).includes('ADMIN'); }
+        function hasAdminAccess(roles) { return isSuperAdmin(roles) || isAdmin(roles); }
+
+        /* What targets can this actor delete?
+        SUPER_ADMIN → can delete USER and ADMIN (not SUPER_ADMIN)
+        ADMIN       → can delete USER only              */
+        function canDelete(actorRoles, targetRoles) {
+            const actor  = parseRoles(actorRoles);
+            const target = parseRoles(targetRoles);
+            const actorIsSuper = actor.includes('SUPER_ADMIN');
+            const actorIsAdmin = actor.includes('ADMIN');
+            const targetIsSuper = target.includes('SUPER_ADMIN');
+            const targetIsAdmin = target.includes('ADMIN');
+            const targetIsUser  = target.includes('USER');
+
+            if (actorIsSuper) {
+                // SUPER_ADMIN cannot delete another SUPER_ADMIN
+                return !targetIsSuper;
+            }
+            if (actorIsAdmin) {
+                // ADMIN can only delete plain USERs (not ADMIN or SUPER_ADMIN)
+                return targetIsUser && !targetIsAdmin && !targetIsSuper;
+            }
+            return false;
+        }
+
+        /* ─── BOOT ─── */
+        window.onload = () => {
+            if (adminToken && adminUser && hasAdminAccess(adminUser.roles)) {
+                showAdminApp();
+            } else {
+                adminToken = null; adminUser = null;
+                localStorage.removeItem('cm_admin_token');
+                localStorage.removeItem('cm_admin_user');
+            }
+        };
+
+        function authH() {
+            return { 'Authorization': 'Bearer ' + adminToken, 'Content-Type': 'application/json' };
+        }
+
+        /* ─── LOGIN ─── */
+        async function doAdminLogin() {
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            if (!username || !password) { toast('Fill in both fields', 'error'); return; }
+            const btn = document.getElementById('adminLoginBtn');
+            btn.disabled = true; btn.textContent = 'Signing in…';
+            try {
+                const r = await fetch(`${API}/auth/login`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                });
+                const d = await r.json();
+                if (!r.ok) { toast(d.message || 'Invalid credentials', 'error'); return; }
+                if (!hasAdminAccess(d.roles)) {
+                    toast('This account does not have admin access.', 'error'); return;
+                }
+                adminToken = d.jwt;
+                adminUser  = { id: d.id, username: d.username, roles: d.roles };
+                localStorage.setItem('cm_admin_token', adminToken);
+                localStorage.setItem('cm_admin_user', JSON.stringify(adminUser));
+                showAdminApp();
+                toast(`Welcome, ${d.username}!`, 'success');
+            } catch { toast('Cannot reach server', 'error'); }
+            finally { btn.disabled = false; btn.textContent = 'Sign in as Admin'; }
+        }
+
+    
+
+        function showAdminApp() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('adminApp').style.display    = 'flex';
+            document.getElementById('sidebarUsername').textContent = adminUser.username || 'Admin';
+
+            const roles       = parseRoles(adminUser.roles);
+            const superAdmin  = roles.includes('SUPER_ADMIN');
+            const roleTag     = document.getElementById('sidebarRoleTag');
+            const badge       = document.getElementById('topbarBadge');
+            const permBox     = document.getElementById('dashPermBox');
+            const usersPermBox = document.getElementById('usersPermBox');
+
+            if (superAdmin) {
+                roleTag.textContent = '⭐ SUPER ADMIN';
+                roleTag.className   = 'role-tag super';
+                badge.textContent   = 'SUPER ADMIN';
+                badge.className     = 'badge badge-super';
+                permBox.className   = 'perm-box perm-super';
+                permBox.innerHTML   = '<b>⭐ SUPER ADMIN:</b> You can delete <b>USERs</b> and <b>ADMINs</b>. You cannot delete another SUPER_ADMIN.';
+                usersPermBox.className = 'perm-box perm-super';
+                usersPermBox.innerHTML = permBox.innerHTML;
+            } else {
+                roleTag.textContent = '🛡 ADMIN';
+                roleTag.className   = 'role-tag admin';
+                badge.textContent   = 'ADMIN';
+                badge.className     = 'badge badge-admin';
+                permBox.className   = 'perm-box perm-admin';
+                permBox.innerHTML   = '<b>🛡 ADMIN:</b> You can delete <b>USERs only</b>. You cannot delete other ADMINs or SUPER ADMINs.';
+                usersPermBox.className = 'perm-box perm-admin';
+                usersPermBox.innerHTML = permBox.innerHTML;
+            }
+
+            loadDashboard();
+        }
+
+        function adminLogout() {
+            adminToken = null; adminUser = null;
+            localStorage.removeItem('cm_admin_token');
+            localStorage.removeItem('cm_admin_user');
+            document.getElementById('adminApp').style.display    = 'none';
+            document.getElementById('loginScreen').style.display = 'flex';
+        }
+
+        /* ─── NAV ─── */
+        function navBtns(id) { return document.querySelector(`.nav-item[onclick*="${id}"]`); }
+
+        function switchPanel(id, btn) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('panel-' + id).classList.add('active');
+            if (btn) btn.classList.add('active');
+            const titles = { dashboard:'Dashboard', users:'Users', products:'Products',
+                            categories:'Categories', reports:'Reports', promote:'Add Admin' };
+            document.getElementById('topbarTitle').textContent = titles[id] || id;
+            if (id === 'users')      loadUsers();
+            if (id === 'products')   loadAdminProducts();
+            if (id === 'categories') loadCategories();
+        }
+
+        /* ─── DASHBOARD ─── */
+        async function loadDashboard() {
+            try {
+                const [ur, pr, cr] = await Promise.allSettled([
+                    fetch(`${API}/users/allUser?page=0&size=5&sortBy=id&direction=desc`, { headers: authH() }),
+                    fetch(`${API}/products?page=0&size=1`),
+                    fetch(`${API}/categorys/allCategory`),
+                ]);
+                if (ur.status === 'fulfilled' && ur.value.ok) {
+                    const d = await ur.value.json();
+                    document.getElementById('statUsers').textContent = d.totalElements || '—';
+                    renderDashRecentUsers(d.content || []);
+                }
+                if (pr.status === 'fulfilled' && pr.value.ok) {
+                    const d = await pr.value.json();
+                    document.getElementById('statProducts').textContent = d.totalElements || '—';
+                }
+                if (cr.status === 'fulfilled' && cr.value.ok) {
+                    const d = await cr.value.json();
+                    document.getElementById('statCats').textContent = d.length || '—';
+                }
+                const ar = await fetch(`${API}/products/filter?status=AVAILABLE&page=0&size=1`);
+                if (ar.ok) { const ad = await ar.json(); document.getElementById('statAvailable').textContent = ad.totalElements || '—'; }
+            } catch {}
+        }
+
+        function renderDashRecentUsers(users) {
+            const el = document.getElementById('dashRecentUsers');
+            if (!users.length) { el.innerHTML = '<div class="ud-empty">No users yet</div>'; return; }
+            el.innerHTML = users.map(u => `
+                <div style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-bottom:1px solid var(--border)">
+                    <div class="avatar" style="width:28px;height:28px;font-size:.75rem">${(u.name||'?')[0].toUpperCase()}</div>
+                    <div style="flex:1;font-size:.84rem;font-weight:600">${escHtml(u.name||'—')}</div>
+                    <span style="font-size:.72rem;color:var(--muted);font-family:var(--mono)">#${u.Id||u.id}</span>
+                    <button class="btn btn-ghost btn-sm" onclick="openUserDetail(${u.Id||u.id})">View</button>
+                </div>`).join('');
+        }
+
+        /* ─── USERS ─── */
+        let userSearchTimer = null;
+        function debounceUserSearch() { clearTimeout(userSearchTimer); userSearchTimer = setTimeout(() => loadUsers(0), 400); }
+        function clearUserSearch() {
+            document.getElementById('userSearchName').value = '';
+            document.getElementById('userSearchCollege').value = '';
+            loadUsers(0);
+        }
+
+        async function loadUsers(page = 0) {
+            usersPage = page;
+            const size    = document.getElementById('userPageSize').value;
+            const name    = document.getElementById('userSearchName').value.trim();
+            const college = document.getElementById('userSearchCollege').value.trim();
+            const tbody   = document.getElementById('usersTable');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem"><div class="spinner"></div></td></tr>';
+
+            try {
+                let url = name || college
+                    ? `${API}/users/search?page=${page}&size=${size}${name?'&name='+encodeURIComponent(name):''}${college?'&college='+encodeURIComponent(college):''}`
+                    : `${API}/users/allUser?page=${page}&size=${size}&sortBy=id&direction=desc`;
+
+                const r = await fetch(url, { headers: authH() });
+                if (!r.ok) throw new Error(r.status);
+                const data  = await r.json();
+                const users = data.content || [];
+
+                if (!users.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--muted)">No users found</td></tr>';
+                    document.getElementById('usersPagination').innerHTML = '';
+                    return;
+                }
+
+                tbody.innerHTML = users.map(u => {
+                    const uid      = u.Id || u.id;
+                    const uRoles   = u.roles || ['USER'];
+                    const isSuper  = isSuperAdmin(uRoles);
+                    const isAdm    = isAdmin(uRoles) && !isSuper;
+                    const canDel   = canDelete(adminUser.roles, uRoles);
+                    const avatarCls = isSuper ? 'avatar super-admin' : isAdm ? 'avatar admin-role' : 'avatar';
+
+                    return `<tr>
+                        <td>
+                            <div class="user-row">
+                                <div class="${avatarCls}">${(u.name||'?')[0].toUpperCase()}</div>
+                                <span style="font-weight:500">${escHtml(u.name || '—')}</span>
+                            </div>
+                        </td>
+                        <td><span style="font-family:var(--mono);font-size:.8rem">#${uid}</span></td>
+                        <td><span style="font-size:.8rem;color:var(--muted)">${u.college ? '🎓 '+escHtml(u.college) : '—'}</span></td>
+                        <td>
+                            ${isSuper ? '<span class="role-badge role-super">⭐ SUPER_ADMIN</span>' : ''}
+                            ${isAdm   ? '<span class="role-badge role-admin">🛡 ADMIN</span>' : ''}
+                            ${(!isSuper && !isAdm) ? '<span class="role-badge role-user">USER</span>' : ''}
+                        </td>
+                        <td class="action-row">
+                            <button class="btn btn-primary btn-sm" onclick="openUserDetail(${uid})">View</button>
+                            ${!isAdm && !isSuper ? `<button class="btn btn-warning btn-sm" onclick="promoteUserById(${uid},'${escHtml(u.name||'')}')">Make Admin</button>` : ''}
+                            ${canDel
+                                ? `<button class="btn btn-danger btn-sm" onclick="confirmDeleteUser(${uid},'${escHtml(u.name||'')}',${JSON.stringify(uRoles)})">Delete</button>`
+                                : `<button class="btn btn-ghost btn-sm" disabled title="You cannot delete this user">Delete</button>`}
+                        </td>
+                    </tr>`;
+                }).join('');
+
+                renderPagination('usersPagination', page, data.totalPages || 1, 'loadUsers');
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:2rem;color:var(--danger)">Failed (${e.message})</td></tr>`;
+            }
+        }
+
+        /* ─── USER DETAIL MODAL ─── */
+        async function openUserDetail(userId) {
+            modalCurrentUser = null;
+            document.getElementById('modalUserDetail').classList.add('open');
+            document.getElementById('modalUserBody').innerHTML = '<div class="spinner"></div>';
+            document.getElementById('modalUserFooter').innerHTML = '<button class="btn btn-ghost" onclick="closeUserModal()">Close</button>';
+
+            try {
+                const r = await fetch(`${API}/users/userId/${userId}`, { headers: authH() });
+                if (!r.ok) throw new Error('Status ' + r.status);
+                const u = await r.json();
+                modalCurrentUser = u;
+                renderUserDetailModal(u);
+            } catch (e) {
+                document.getElementById('modalUserBody').innerHTML =
+                    `<div class="empty-state"><div class="empty-icon">⚠️</div><p>Could not load: ${e.message}</p></div>`;
+            }
+        }
+
+        function renderUserDetailModal(u) {
+            const roles       = u.roles ? [...u.roles] : ['USER'];
+            const isSuper     = isSuperAdmin(roles);
+            const isAdm       = isAdmin(roles) && !isSuper;
+            const canDel      = canDelete(adminUser.roles, roles);
+            const canPromote  = !isAdm && !isSuper;
+
+            const avatarCls = isSuper ? 'avatar lg super-admin' : isAdm ? 'avatar lg admin-role' : 'avatar lg';
+
+            let html = `
+                <div class="ud-profile">
+                    <div class="${avatarCls}">${(u.username||'?')[0].toUpperCase()}</div>
+                    <div>
+                        <div class="ud-name">${escHtml(u.username || '—')}</div>
+                        <div class="ud-college">${u.college ? '🎓 '+escHtml(u.college) : 'No college set'}</div>
+                        <div style="margin-top:.4rem;display:flex;gap:.3rem;flex-wrap:wrap">
+                            ${isSuper ? '<span class="role-badge role-super">⭐ SUPER_ADMIN</span>' : ''}
+                            ${isAdm   ? '<span class="role-badge role-admin">🛡 ADMIN</span>' : ''}
+                            ${(!isSuper) ? '<span class="role-badge role-user">USER</span>' : ''}
+                        </div>
+                    </div>
+                    <div style="margin-left:auto;text-align:right">
+                        <div style="font-family:var(--mono);font-size:.72rem;color:var(--muted)">ID</div>
+                        <div style="font-family:var(--mono);font-weight:700">#${u.id}</div>
+                    </div>
+                </div>`;
+
+            html += `
+                <div class="ud-stats">
+                    <div class="ud-stat"><div class="ud-stat-val">${u.totalListings??0}</div><div class="ud-stat-lbl">Listings</div></div>
+                    <div class="ud-stat"><div class="ud-stat-val" style="color:var(--success)">${u.activeListings??0}</div><div class="ud-stat-lbl">Active</div></div>
+                    <div class="ud-stat"><div class="ud-stat-val" style="color:var(--accent)">${u.soldListings??0}</div><div class="ud-stat-lbl">Sold</div></div>
+                </div>`;
+
+            // Products
+            html += `<div class="ud-section-title">📦 Products (${(u.products||[]).length})</div>`;
+            if (u.products?.length) {
+                html += u.products.map(p => `
+                    <div class="ud-product-row">
+                        <div class="ud-product-img">
+                            ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='📦'"/>` : '📦'}
+                        </div>
+                        <div style="flex:1;overflow:hidden">
+                            <div class="ud-product-title">${escHtml(p.title)}</div>
+                            <div style="font-size:.72rem;color:var(--muted)">${escHtml(p.categoryName||'—')}</div>
+                        </div>
+                        <div style="text-align:right;flex-shrink:0">
+                            <div class="ud-product-price">₹${escHtml(p.amount)}</div>
+                            <span class="role-badge ${p.status==='AVAILABLE'?'status-available':'status-sold'}" style="font-size:.65rem">${p.status||'—'}</span>
+                        </div>
+                    </div>`).join('');
+            } else { html += '<div class="ud-empty">No products listed</div>'; }
+
+            // Reports Made
+            html += `<div class="ud-section-title">⚑ Reports Made (${u.reportsMadeCount??0})</div>`;
+            if (u.reportsMade?.length) {
+                html += u.reportsMade.map(rep => `
+                    <div class="ud-report-row">
+                        <div class="ud-report-reason">"${escHtml(rep.reason||'—')}"</div>
+                        <div class="ud-report-meta">
+                            Reported: <b>${escHtml(rep.reportedUserName||'?')}</b>
+                            ${rep.productTitle ? ` · <b>${escHtml(rep.productTitle)}</b>` : ''}
+                            ${rep.reportDate ? ' · '+new Date(rep.reportDate).toLocaleDateString() : ''}
+                        </div>
+                    </div>`).join('');
+            } else { html += '<div class="ud-empty">No reports made</div>'; }
+
+            // Reports Received
+            html += `<div class="ud-section-title">🚨 Reports Received (${u.reportsReceivedCount??0})</div>`;
+            if (u.reportsReceived?.length) {
+                html += u.reportsReceived.map(rep => `
+                    <div class="ud-report-row" style="background:#fff8f8;border-color:#fecaca">
+                        <div class="ud-report-reason">"${escHtml(rep.reason||'—')}"</div>
+                        <div class="ud-report-meta">
+                            By: <b>${escHtml(rep.reporterName||'?')}</b>
+                            ${rep.productTitle ? ` · <b>${escHtml(rep.productTitle)}</b>` : ''}
+                            ${rep.reportDate ? ' · '+new Date(rep.reportDate).toLocaleDateString() : ''}
+                        </div>
+                    </div>`).join('');
+            } else { html += '<div class="ud-empty">No reports received</div>'; }
+
+            document.getElementById('modalUserBody').innerHTML = html;
+
+            // Build footer buttons based on permissions
+            let footerHtml = '<button class="btn btn-ghost" onclick="closeUserModal()">Close</button>';
+            if (canPromote) {
+                footerHtml += `<button class="btn btn-warning" onclick="promoteFromModal()">🛡 Make Admin</button>`;
+            }
+            if (canDel) {
+                footerHtml += `<button class="btn btn-danger" onclick="confirmDeleteFromModal()">🗑 Delete User</button>`;
+            } else {
+                // Show why delete is disabled
+                let reason = '';
+                if (isSuper) reason = 'Cannot delete SUPER_ADMIN';
+                else if (isAdm && !isSuperAdmin(adminUser.roles)) reason = 'ADMIN cannot delete another ADMIN';
+                footerHtml += `<button class="btn btn-ghost" disabled title="${reason}" style="opacity:.45">🗑 Delete User</button>`;
+            }
+            document.getElementById('modalUserFooter').innerHTML = footerHtml;
+        }
+
+        function closeUserModal() {
+            document.getElementById('modalUserDetail').classList.remove('open');
+            modalCurrentUser = null;
+        }
+
+        /* ─── PROMOTE ─── */
+        async function promoteFromModal() {
+            if (!modalCurrentUser) return;
+            if (!confirm(`Promote ${modalCurrentUser.username} (#${modalCurrentUser.id}) to Admin?`)) return;
+            await doPromote(modalCurrentUser.id, modalCurrentUser.username);
+            closeUserModal();
+            loadUsers(usersPage);
+        }
+
+        async function promoteUserById(userId, name) {
+            if (!confirm(`Promote ${name} (#${userId}) to Admin?`)) return;
+            await doPromote(userId, name);
+            loadUsers(usersPage);
+        }
+
+        async function doPromote(userId, name) {
+            try {
+                const r = await fetch(`${API}/admin/onBordNewAdmin`, {
+                    method: 'POST', headers: authH(),
+                    body: JSON.stringify({ name, userId }),
+                });
+                const d = await r.json();
+                if (!r.ok) { toast(d.message || 'Failed to promote', 'error'); return; }
+                toast(`${name} is now an Admin ✓`, 'success');
+                document.getElementById('promoteUsername').value = '';
+                document.getElementById('promoteUserId').value   = '';
+            } catch { toast('Cannot reach server', 'error'); }
+        }
+
+        /* ─── DELETE USER — two-step confirm ─── */
+        function confirmDeleteUser(userId, name, targetRoles) {
+            if (!canDelete(adminUser.roles, targetRoles)) {
+                toast('You do not have permission to delete this user', 'error');
+                return;
+            }
+            pendingDeleteUserId = userId;
+            const myRoles     = parseRoles(adminUser.roles);
+            const targetParsed = parseRoles(targetRoles);
+            const targetLabel = targetParsed.includes('ADMIN') ? 'ADMIN' : 'USER';
+            document.getElementById('confirmDeleteBody').innerHTML =
+                `You are about to delete <b>${escHtml(name)}</b> (#${userId}) — role: <b>${targetLabel}</b>.<br/><br/>
+                This will permanently remove their account and all associated data. This cannot be undone.`;
+            document.getElementById('modalConfirmDelete').classList.add('open');
+        }
+
+        function confirmDeleteFromModal() {
+            if (!modalCurrentUser) return;
+            confirmDeleteUser(modalCurrentUser.id, modalCurrentUser.username, modalCurrentUser.roles || ['USER']);
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('modalConfirmDelete').classList.remove('open');
+            pendingDeleteUserId = null;
+        }
+
+        async function executeDelete() {
+            const userId = pendingDeleteUserId;
+            if (!userId) return;
+            const btn = document.getElementById('confirmDeleteBtn');
+            btn.disabled = true; btn.textContent = 'Deleting…';
+
+            try {
+                const r = await fetch(`${API}/users/delete/${userId}`, {
+                    method: 'DELETE', headers: authH(),
+                });
+
+                if (!r.ok) {
+                    const d = await r.json().catch(() => ({}));
+                    toast(d.message || 'Failed to delete user', 'error');
+                    return;
+                }
+
+                toast('User deleted successfully ✓', 'success');
+                closeConfirmModal();
+                closeUserModal();
+                loadUsers(usersPage);
+                loadDashboard();
+            } catch {
+                toast('Cannot reach server', 'error');
+            } finally {
+                btn.disabled = false; btn.textContent = 'Delete';
+            }
+        }
+
+        /* ─── PRODUCTS ─── */
+        async function loadAdminProducts(page = 0) {
+            productsPage = page;
+            const tbody  = document.getElementById('productsTable');
+            const status = document.getElementById('productFilterStatus').value;
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem"><div class="spinner"></div></td></tr>';
+
+            try {
+                const url = status
+                    ? `${API}/products/filter?status=${status}&page=${page}&size=20&sortBy=uploadDate&direction=desc`
+                    : `${API}/products?page=${page}&size=20&sortBy=uploadDate&direction=desc`;
+                const r = await fetch(url);
+                if (!r.ok) throw new Error();
+                const data     = await r.json();
+                const products = data.content || [];
+                if (!products.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--muted)">No products</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = products.map(p => `
+                    <tr>
+                        <td style="max-width:180px">
+                            <div style="display:flex;align-items:center;gap:.5rem">
+                                <div style="width:32px;height:32px;border-radius:6px;background:var(--surface);
+                                            display:flex;align-items:center;justify-content:center;
+                                            flex-shrink:0;overflow:hidden;font-size:1rem">
+                                    ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='📦'"/>` : '📦'}
+                                </div>
+                                <span style="font-weight:500;font-size:.84rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.title)}</span>
+                            </div>
+                        </td>
+                        <td style="font-family:var(--mono);font-size:.82rem;font-weight:700">₹${escHtml(p.amount)}</td>
+                        <td style="font-size:.83rem">${escHtml(p.sellerName||'—')}</td>
+                        <td style="font-size:.8rem;color:var(--muted)">${escHtml(p.college||'—')}</td>
+                        <td style="font-size:.8rem">${escHtml(p.categoryName||'—')}</td>
+                        <td><span class="role-badge ${p.status==='AVAILABLE'?'status-available':'status-sold'}">${p.status||'AVAILABLE'}</span></td>
+                    </tr>`).join('');
+                renderPagination('productsPagination', page, data.totalPages || 1, 'loadAdminProducts');
+            } catch {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--danger)">Failed to load</td></tr>';
+            }
+        }
+
+        /* ─── CATEGORIES ─── */
+        async function loadCategories() {
+            try {
+                const r    = await fetch(`${API}/categorys/allCategory`);
+                const cats = await r.json();
+                const tbody = document.getElementById('catsTable');
+                if (!cats.length) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:1.5rem;color:var(--muted)">No categories yet</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = cats.map(c => `
+                    <tr>
+                        <td style="font-family:var(--mono);font-size:.8rem">#${c.id}</td>
+                        <td><b>${escHtml(c.name)}</b></td>
+                        <td><button class="btn btn-danger btn-sm" onclick="deleteCategory('${escHtml(c.name)}')">Delete</button></td>
+                    </tr>`).join('');
+            } catch {}
+        }
+
+        let catFieldCount = 1;
+        function addCatField() {
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.innerHTML = `<label class="form-label">Category name</label><input class="form-input new-cat-input" placeholder="e.g. Electronics"/>`;
+            document.getElementById('newCatFields').appendChild(div);
+        }
+
+        async function doAddCategories() {
+            const cats = [...document.querySelectorAll('.new-cat-input')]
+                .map(i => i.value.trim()).filter(Boolean).map(name => ({ name }));
+            if (!cats.length) { toast('Enter at least one category name', 'error'); return; }
+            try {
+                const r = await fetch(`${API}/categorys/addCategory`, {
+                    method: 'POST', headers: authH(), body: JSON.stringify(cats),
+                });
+                if (!r.ok) { toast('Failed to add categories', 'error'); return; }
+                toast(`${cats.length} category(s) added ✓`, 'success');
+                document.querySelectorAll('.new-cat-input').forEach(i => i.value = '');
+                loadCategories();
+            } catch { toast('Cannot reach server', 'error'); }
+        }
+
+        async function deleteCategory(name) {
+            if (!confirm(`Delete category "${name}"?`)) return;
+            try {
+                const r = await fetch(`${API}/categorys/delete?CategorName=${encodeURIComponent(name)}`,
+                    { method: 'DELETE', headers: authH() });
+                if (!r.ok) { toast('Failed to delete', 'error'); return; }
+                toast(`Category "${name}" deleted`, 'success');
+                loadCategories();
+            } catch { toast('Cannot reach server', 'error'); }
+        }
+
+        /* ─── REPORTS QUICK LOOKUP ─── */
+        async function quickViewUserReports() {
+            const userId    = document.getElementById('reportUserId').value.trim();
+            if (!userId) { toast('Enter a user ID', 'error'); return; }
+            const container = document.getElementById('quickReportResult');
+            container.innerHTML = '<div class="spinner"></div>';
+            try {
+                const r = await fetch(`${API}/users/userId/${userId}`, { headers: authH() });
+                if (!r.ok) throw new Error('User not found');
+                const u = await r.json();
+                const made     = u.reportsMadeCount     ?? u.reportsMade?.length     ?? 0;
+                const received = u.reportsReceivedCount ?? u.reportsReceived?.length ?? 0;
+                let html = `<div class="form-card" style="margin-top:0">
+                    <div style="display:flex;align-items:center;gap:.7rem;margin-bottom:1rem">
+                        <div class="avatar">${(u.username||'?')[0].toUpperCase()}</div>
+                        <div>
+                            <div style="font-weight:700">${escHtml(u.username)}</div>
+                            <div style="font-size:.75rem;color:var(--muted);font-family:var(--mono)">#${u.id}</div>
+                        </div>
+                        <div style="margin-left:auto">
+                            <span class="role-badge role-admin">${made} made</span>
+                            <span class="role-badge" style="background:#fee2e2;color:var(--danger)">${received} received</span>
+                        </div>
+                    </div>`;
+                html += `<div class="ud-section-title">Reports Made (${made})</div>`;
+                html += u.reportsMade?.length
+                    ? u.reportsMade.map(rep => `<div class="ud-report-row" style="margin-bottom:.4rem">
+                        <div class="ud-report-reason">"${escHtml(rep.reason||'—')}"</div>
+                        <div class="ud-report-meta">Reported: <b>${escHtml(rep.reportedUserName||'?')}</b>${rep.productTitle?` · <b>${escHtml(rep.productTitle)}</b>`:''}${rep.reportDate?' · '+new Date(rep.reportDate).toLocaleDateString():''}</div>
+                        </div>`).join('')
+                    : '<div class="ud-empty">No reports made</div>';
+                html += `<div class="ud-section-title">Reports Received (${received})</div>`;
+                html += u.reportsReceived?.length
+                    ? u.reportsReceived.map(rep => `<div class="ud-report-row" style="background:#fff8f8;border-color:#fecaca;margin-bottom:.4rem">
+                        <div class="ud-report-reason">"${escHtml(rep.reason||'—')}"</div>
+                        <div class="ud-report-meta">By: <b>${escHtml(rep.reporterName||'?')}</b>${rep.productTitle?` · <b>${escHtml(rep.productTitle)}</b>`:''}${rep.reportDate?' · '+new Date(rep.reportDate).toLocaleDateString():''}</div>
+                        </div>`).join('')
+                    : '<div class="ud-empty">No reports received</div>';
+                html += `<button class="btn btn-primary btn-sm" style="margin-top:.8rem" onclick="openUserDetail(${u.id})">Open Full Profile</button></div>`;
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = `<div class="empty-state" style="padding:1.5rem"><div class="empty-icon">⚠️</div><p>${e.message}</p></div>`;
+            }
+        }
+
+        /* ─── PROMOTE TO ADMIN ─── */
+        async function promoteToAdmin() {
+            const name   = document.getElementById('promoteUsername').value.trim();
+            const userId = parseInt(document.getElementById('promoteUserId').value.trim() || '0');
+            if (!name) { toast('Enter a username', 'error'); return; }
+            await doPromote(userId, name);
+        }
+
+        /* ─── PAGINATION ─── */
+        function renderPagination(elId, page, total, fnName) {
+            const el = document.getElementById(elId);
+            if (total <= 1) { el.innerHTML = ''; return; }
+            const start = Math.max(0, page - 2), end = Math.min(total - 1, page + 2);
+            let html = `<button class="btn btn-ghost btn-sm" ${page===0?'disabled':''} onclick="${fnName}(${page-1})">‹</button>`;
+            for (let i = start; i <= end; i++)
+                html += `<button class="btn btn-sm ${i===page?'btn-primary':'btn-ghost'}" onclick="${fnName}(${i})">${i+1}</button>`;
+            html += `<button class="btn btn-ghost btn-sm" ${page===total-1?'disabled':''} onclick="${fnName}(${page+1})">›</button>`;
+            el.innerHTML = html;
+        }
+
+        /* ─── UTILS ─── */
+        function escHtml(s) {
+            return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        function toast(msg, type = 'info') {
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.innerHTML = `<span>${type==='success'?'✓':type==='error'?'✕':'ℹ'}</span> ${msg}`;
+            document.getElementById('toastContainer').appendChild(el);
+            setTimeout(() => el.remove(), 3500);
+        }
+
+        /* close modals on overlay click */
+        document.getElementById('modalUserDetail').addEventListener('click', function(e) { if(e.target===this) closeUserModal(); });
+        document.getElementById('modalConfirmDelete').addEventListener('click', function(e) { if(e.target===this) closeConfirmModal(); });
+    </script>
+    </body>
+    </html>
