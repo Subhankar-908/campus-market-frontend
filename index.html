@@ -109,6 +109,15 @@
           textarea.form-input{resize:vertical;min-height:80px}
           .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
           .form-hint{font-size:.75rem;color:var(--muted);margin-top:.25rem}
+          .pw-field{position:relative}
+          .pw-field .form-input{padding-right:2.6rem}
+          .pw-toggle{position:absolute;right:.6rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;color:var(--muted);padding:.2rem;line-height:1;user-select:none}
+          .pw-toggle:hover{color:var(--ink)}
+          .pw-req-list{list-style:none;margin-top:.4rem;font-size:.72rem;color:var(--muted);display:flex;flex-direction:column;gap:.15rem}
+          .pw-req-list li{display:flex;align-items:center;gap:.35rem}
+          .pw-req-list li::before{content:'○';font-size:.65rem}
+          .pw-req-list li.met{color:var(--success)}
+          .pw-req-list li.met::before{content:'●';color:var(--success)}
           .form-divider{text-align:center;color:var(--muted);font-size:.82rem;margin:.8rem 0;position:relative}
           .form-divider::before,.form-divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--border)}
           .form-divider::before{left:0}.form-divider::after{right:0}
@@ -290,13 +299,19 @@
                   <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">Choose a new password for your account.</p>
                   <div class="form-group">
                       <label class="form-label">New Password</label>
-                      <input class="form-input" id="fpNewPassword" type="password" placeholder="Min 6 characters" autocomplete="new-password" oninput="checkPasswordStrength(this.value)"/>
-                      <div class="pw-strength" id="pwStrengthBar" style="display:none"></div>
-                      <div class="pw-strength-label" id="pwStrengthLabel"></div>
+                      <div class="pw-field">
+  <input class="form-input" id="fpNewPassword" type="password" placeholder="Create a strong password" autocomplete="new-password" oninput="checkPasswordStrength(this.value,'fpPwStrengthBar','fpPwStrengthLabel')"/>
+  <button type="button" class="pw-toggle" onclick="togglePw('fpNewPassword',this)">👁</button>
+</div>
+<div class="pw-strength" id="fpPwStrengthBar" style="display:none"></div>
+<div class="pw-strength-label" id="fpPwStrengthLabel"></div>
                   </div>
                   <div class="form-group">
                       <label class="form-label">Confirm New Password</label>
-                      <input class="form-input" id="fpConfirmPassword" type="password" placeholder="Repeat new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doResetPassword()"/>
+                      <div class="pw-field">
+  <input class="form-input" id="fpConfirmPassword" type="password" placeholder="Repeat new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doResetPassword()"/>
+  <button type="button" class="pw-toggle" onclick="togglePw('fpConfirmPassword',this)">👁</button>
+</div>
                   </div>
                   <button class="btn btn-primary" style="width:100%;padding:.7rem" onclick="doResetPassword()" id="fpResetBtn">Reset Password</button>
               </div>
@@ -375,7 +390,10 @@
               <div class="form-group"><label class="form-label">Username</label><input class="form-input" id="loginUsername" type="text" placeholder="Your username" autocomplete="username"/></div>
               <div class="form-group">
                   <label class="form-label">Password</label>
+                  <div class="pw-field">
                   <input class="form-input" id="loginPassword" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password"/>
+                  <button type="button" class="pw-toggle" onclick="togglePw('loginPassword',this)">👁</button>
+                  </div>
                   <div style="text-align:right;margin-top:.35rem">
                       <a href="#" style="color:var(--primary);font-size:.8rem;font-weight:600" onclick="switchModals('loginModal','forgotPasswordModal')">Forgot password?</a>
                   </div>
@@ -398,7 +416,21 @@
                   <input class="form-input" id="signupMobile" type="tel" maxlength="10" placeholder="10-digit mobile number"/>
                   <div class="form-hint">Used to verify your account and reset your password if needed.</div>
               </div>
-              <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="signupPassword" type="password" placeholder="Min 6 characters" onkeydown="if(event.key==='Enter')doSignup()" autocomplete="new-password"/></div>
+              <div class="form-group">
+  <label class="form-label">Password</label>
+  <div class="pw-field">
+    <input class="form-input" id="signupPassword" type="password" placeholder="Create a strong password" oninput="checkPasswordStrength(this.value,'signupPwStrengthBar','signupPwStrengthLabel','signupPwReqs')" onkeydown="if(event.key==='Enter')doSignup()" autocomplete="new-password"/>
+    <button type="button" class="pw-toggle" onclick="togglePw('signupPassword',this)">👁</button>
+  </div>
+  <div class="pw-strength" id="signupPwStrengthBar" style="display:none"></div>
+  <div class="pw-strength-label" id="signupPwStrengthLabel"></div>
+  <ul class="pw-req-list" id="signupPwReqs">
+    <li data-rule="len">At least 8 characters</li>
+    <li data-rule="upper">One uppercase letter</li>
+    <li data-rule="num">One number</li>
+    <li data-rule="special">One special character</li>
+  </ul>
+</div>
               <button class="btn btn-primary" style="width:100%;padding:.7rem" onclick="doSignup()" id="signupBtn">Create account</button>
               <p style="text-align:center;font-size:.85rem;color:var(--muted);margin-top:.8rem">Have an account? <a href="#" style="color:var(--primary);font-weight:600" onclick="switchModals('signupModal','loginModal')">Sign in</a></p>
           </div>
@@ -567,14 +599,26 @@
               </div>
 
               <div class="profile-tab-panel" id="ptabPwd">
-                  <div class="form-group"><label class="form-label">Current Password</label><input class="form-input" id="pwdCurrent" type="password" placeholder="Your current password" autocomplete="current-password"/></div>
+                  <div class="form-group"><label class="form-label">Current Password</label>
+                    <div class="pw-field">
+  <input class="form-input" id="pwdCurrent" type="password" placeholder="Your current password" autocomplete="current-password"/>
+  <button type="button" class="pw-toggle" onclick="togglePw('pwdCurrent',this)">👁</button>
+</div>
+                    </div>
                   <div class="form-group">
                       <label class="form-label">New Password</label>
-                      <input class="form-input" id="pwdNew" type="password" placeholder="Min 6 characters" autocomplete="new-password" oninput="checkPasswordStrength(this.value)"/>
-                      <div class="pw-strength" id="pwStrengthBar" style="display:none"></div>
-                      <div class="pw-strength-label" id="pwStrengthLabel"></div>
+                      <div class="pw-field">
+  <input class="form-input" id="pwdNew" type="password" placeholder="Create a strong password" autocomplete="new-password" oninput="checkPasswordStrength(this.value,'pwdPwStrengthBar','pwdPwStrengthLabel')"/>
+  <button type="button" class="pw-toggle" onclick="togglePw('pwdNew',this)">👁</button>
+</div>
+<div class="pw-strength" id="pwdPwStrengthBar" style="display:none"></div>
+<div class="pw-strength-label" id="pwdPwStrengthLabel"></div>
                   </div>
-                  <div class="form-group"><label class="form-label">Confirm New Password</label><input class="form-input" id="pwdConfirm" type="password" placeholder="Repeat new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doChangePassword()"/></div>
+                  <div class="form-group"><label class="form-label">Confirm New Password</label>
+                    <div class="pw-field">
+  <input class="form-input" id="pwdConfirm" type="password" placeholder="Repeat new password" autocomplete="new-password" onkeydown="if(event.key==='Enter')doChangePassword()"/>
+  <button type="button" class="pw-toggle" onclick="togglePw('pwdConfirm',this)">👁</button>
+</div></div>
                   <button class="btn btn-primary" style="width:100%" onclick="doChangePassword()" id="pwdSaveBtn">Change Password</button>
               </div>
 
@@ -632,8 +676,8 @@
   </div>
 
   <script>
-      // const API='http://localhost:8084';
-      const API="https://campus-market-1-ot8u.onrender.com";
+      const API='http://localhost:8084';
+      // const API="https://campus-market-1-ot8u.onrender.com";
       
       let token=localStorage.getItem('cm_token')||null;
       let refreshTok=localStorage.getItem('cm_refresh')||null;
@@ -922,6 +966,7 @@
     const password=document.getElementById('signupPassword').value;
     if(!username||!college||!mobile||!password){toast('Fill in all fields','warning');return}
     if(!/^[6-9]\d{9}$/.test(mobile)){toast('Enter a valid 10-digit mobile number','warning');return}
+    if(!isStrongPassword(password)){toast('Password must be 8+ chars with an uppercase letter, a number, and a special character','warning');return;}
     const btn=document.getElementById('signupBtn');btn.disabled=true;btn.textContent='Creating account…';
     try{
       const r=await fetch(`${API}/auth/signup`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,college,mobile,password})});
@@ -1367,13 +1412,18 @@ async function handleEditProductImageUpload(inputEl){
       }
 
       async function doChangePassword(){
-        const currentPassword=document.getElementById('pwdCurrent').value;
-        const newPassword=document.getElementById('pwdNew').value;
-        const confirmPassword=document.getElementById('pwdConfirm').value;
-        if(!currentPassword||!newPassword||!confirmPassword){toast('Fill in all fields','warning');return}
-        if(newPassword.length<6){toast('New password must be at least 6 characters','warning');return}
-        if(newPassword!==confirmPassword){toast('New passwords do not match','error');return}
-        if(currentPassword===newPassword){toast('New password must be different from current','warning');return}
+  const currentPassword=document.getElementById('pwdCurrent').value;
+  const newPassword=document.getElementById('pwdNew').value;
+  const confirmPassword=document.getElementById('pwdConfirm').value;
+  if(!currentPassword||!newPassword||!confirmPassword){toast('Fill in all fields','warning');return}
+  if(newPassword.length<6){toast('New password must be at least 6 characters','warning');return}
+  if(!isStrongPassword(newPassword)){
+    toast('New password must be 8+ chars with an uppercase letter, a number, and a special character','warning');
+    return;
+  }
+  if(newPassword!==confirmPassword){toast('New passwords do not match','error');return}
+  if(currentPassword===newPassword){toast('New password must be different from current','warning');return}
+  
         const btn=document.getElementById('pwdSaveBtn');btn.disabled=true;btn.textContent='Changing…';
         try{
           const r=await apiFetch(`${API}/users/changePassword`,{
@@ -1795,6 +1845,32 @@ async function handleEditProductImageUpload(inputEl){
     toast('Image upload failed','error');
     inputEl.value='';
   }
+}
+function togglePw(inputId, btn){
+  const el = document.getElementById(inputId);
+  const show = el.type === 'password';
+  el.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
+}
+function checkPasswordStrength(val, barId='pwStrengthBar', labelId='pwStrengthLabel', reqListId=null){
+  const bar=document.getElementById(barId);
+  const label=document.getElementById(labelId);
+  if(!val){bar.style.display='none';label.textContent='';if(reqListId)updatePwReqs(reqListId,val);return}
+  bar.style.display='block';
+  const hasLen=val.length>=8,hasUpper=/[A-Z]/.test(val),hasNum=/[0-9]/.test(val),hasSpecial=/[^A-Za-z0-9]/.test(val);
+  const score=(hasLen?1:0)+(hasUpper?1:0)+(hasNum?1:0)+(hasSpecial?1:0);
+  if(score<=1){bar.className='pw-strength weak';label.className='pw-strength-label weak';label.textContent='Weak'}
+  else if(score<=3){bar.className='pw-strength medium';label.className='pw-strength-label medium';label.textContent='Medium'}
+  else{bar.className='pw-strength strong';label.className='pw-strength-label strong';label.textContent='Strong'}
+  if(reqListId)updatePwReqs(reqListId,val);
+}
+function updatePwReqs(reqListId,val){
+  const list=document.getElementById(reqListId);if(!list)return;
+  const rules={len:val.length>=8,upper:/[A-Z]/.test(val),num:/[0-9]/.test(val),special:/[^A-Za-z0-9]/.test(val)};
+  list.querySelectorAll('li').forEach(li=>li.classList.toggle('met',!!rules[li.dataset.rule]));
+}
+function isStrongPassword(val){
+  return val.length>=8 && /[A-Z]/.test(val) && /[0-9]/.test(val) && /[^A-Za-z0-9]/.test(val);
 }
   </script>
   </body>
