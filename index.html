@@ -897,7 +897,7 @@
     document.getElementById('loginUsername').value=username;
     document.getElementById('signupPassword').value='';
     document.getElementById('signupMobile').value='';
-  }catch{toast('Cannot reach server','error')}
+  }catch{toast('Cannot reach server. Please refresh page','error')}
   finally{btn.disabled=false;btn.textContent='Create account'}
 }
 
@@ -1119,7 +1119,7 @@ function resetEditProductImagePicker(){
         const r=await apiFetch(`${API}/products/updateProduct/${productId}`,{method:'PUT',headers:authHeaders(),body:JSON.stringify({title,description,amount,status,imgUrl:imgUrl||null})});
         if(!r.ok){const d=await r.json();toast(d.message||'Update failed','error');return}
         toast('Listing updated ✓','success');closeModal('editProductModal');loadProducts();
-      }catch{toast('Cannot reach server','error')}
+      }catch{toast('Cannot reach server. Please refresh page','error')}
       finally{btn.disabled=false;btn.textContent='Save changes'}
     }
 
