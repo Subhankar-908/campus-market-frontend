@@ -531,7 +531,7 @@
                 localStorage.setItem('cm_admin_user', JSON.stringify(adminUser));
                 showAdminApp();
                 toast(`Welcome, ${d.username}!`, 'success');
-            } catch { toast('Cannot reach server', 'error'); }
+            } catch { toast('Cannot reach server. Please refresh page', 'error'); }
             finally { btn.disabled = false; btn.textContent = 'Sign in as Admin'; }
         }
 
