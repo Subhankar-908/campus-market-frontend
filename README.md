@@ -1,5 +1,3 @@
-# campus-market-frontend
-
 # CampusMarket 🎓
 
 A campus-only marketplace where students can buy and sell textbooks, gadgets, and other items with people from their own college (or across colleges). Built with a vanilla JS/HTML frontend and a REST + WebSocket backend, with real-time buyer–seller chat baked in.
