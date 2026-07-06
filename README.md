@@ -2,7 +2,7 @@
 
 A campus-only marketplace where students can buy and sell textbooks, gadgets, and other items with people from their own college (or across colleges). Built with a vanilla JS/HTML frontend and a REST + WebSocket backend, with real-time buyer–seller chat baked in.
 
-[Link](https://campus-market-frontend-6nl6.onrender.com)
+[WEBLink](https://campus-market-frontend-6nl6.onrender.com)
 
 ## ✨ Features
 
@@ -159,6 +159,4 @@ The UI adapts across three breakpoints:
 3. Commit your changes
 4. Open a pull request
 
-## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
